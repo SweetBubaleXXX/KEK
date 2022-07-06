@@ -27,28 +27,55 @@ class SymmetricKey(BaseSymmetricKey):
 
     @property
     def key_size(self) -> int:
-        """Returns length of key in bits."""
+        """Length of key in bits."""
         return len(self.key) * 8
 
     @staticmethod
-    def generate(key_size: int) -> SymmetricKey:
-        """
+    def generate(key_size: int = 256) -> SymmetricKey:
+        """Generate Symmetric Key with set key size.
+
         Parameters
         ----------
         key_size : int
             Size of key in bits.
+
+        Returns
+        -------
+        Symmetric Key object.
         """
         key = os.urandom(key_size // 8)
         iv = os.urandom(SymmetricKey.block_size // 8)
         return SymmetricKey(key, iv)
 
     def encrypt(self, data: bytes) -> bytes:
+        """Encrypt byte data.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+
+        Returns
+        -------
+        Encrypted bytes.
+        """
         padder = PKCS7(self.block_size).padder()
         encryptor = self.cipher.encryptor()
         padded_data = padder.update(data) + padder.finalize()
         return encryptor.update(padded_data) + encryptor.finalize()
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
+        """Decrypt byte data.
+        
+        Parameters
+        ----------
+        encrypted_data : bytes
+            Byte data to decrypt.
+
+        Returns
+        -------
+        Decrypted bytes.
+        """
         unpadder = PKCS7(self.block_size).unpadder()
         decryptor = self.cipher.decryptor()
         decrypted_data = decryptor.update(encrypted_data)
