@@ -47,14 +47,14 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         return PrivateKey(private_key)
 
     @staticmethod
-    def load(serialized_key: bytes, password: Optional[bytes]) -> PrivateKey:
+    def load(serialized_key: bytes, password: Optional[bytes] = None) -> PrivateKey:
         private_key = serialization.load_pem_private_key(
             serialized_key,
             password
         )
         return PrivateKey(private_key)
 
-    def serialize(self, password: Optional[bytes]) -> bytes:
+    def serialize(self, password: Optional[bytes] = None) -> bytes:
         if password:
             encryption_algorithm = serialization.BestAvailableEncryption(
                 password)
