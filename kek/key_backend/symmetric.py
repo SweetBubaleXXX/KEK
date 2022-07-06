@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
 from cryptography.hazmat.primitives.padding import PKCS7
 
-from .base_keys import BaseSymmetricKey
+from .base import BaseSymmetricKey
 
 
 class SymmetricKey(BaseSymmetricKey):

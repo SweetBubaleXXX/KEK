@@ -8,10 +8,10 @@ class BaseSymmetricKey:
     def generate() -> object:
         pass
 
-    def encrypt() -> bytes:
+    def encrypt(self) -> bytes:
         pass
 
-    def decrypt() -> bytes:
+    def decrypt(self) -> bytes:
         pass
 
 
@@ -21,26 +21,34 @@ class BasePrivateKey:
     def __init__(self) -> None:
         pass
 
+    @property
+    def public_key(self) -> object:
+        pass
+
     @staticmethod
     def generate() -> object:
         pass
 
-    def serialize() -> bytes:
+    @staticmethod
+    def load() -> object:
         pass
 
-    def encrypt() -> bytes:
+    def serialize(self) -> bytes:
         pass
 
-    def decrypt() -> bytes:
+    def encrypt(self) -> bytes:
         pass
 
-    def verify() -> bool:
+    def decrypt(self) -> bytes:
         pass
 
-    def sign() -> bytes:
+    def sign(self) -> bytes:
         pass
 
-    def public_key() -> object:
+    def verify(self) -> bool:
+        pass
+
+    def gen_public_key(self) -> object:
         pass
 
 
@@ -50,11 +58,15 @@ class BasePublicKey:
     def __init__(self) -> None:
         pass
 
-    def serialize() -> bytes:
+    @staticmethod
+    def load() -> object:
         pass
 
-    def encrypt() -> bytes:
+    def serialize(self) -> bytes:
         pass
 
-    def verify() -> bool:
+    def encrypt(self) -> bytes:
+        pass
+
+    def verify(self) -> bool:
         pass
