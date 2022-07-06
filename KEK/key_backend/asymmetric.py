@@ -30,7 +30,12 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     format = serialization.PrivateFormat.PKCS8
 
     def __init__(self, private_key_object: RSAPrivateKey) -> None:
-        self.private_key = private_key_object
+        self._private_key = private_key_object
+
+    @property
+    def key_size(self) -> int:
+        """Private Key size in bits."""
+        return self._private_key.key_size
 
     @property
     def public_key(self) -> PublicKey:
@@ -97,7 +102,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
                 password)
         else:
             encryption_algorithm = serialization.NoEncryption()
-        return self.private_key.private_bytes(
+        return self._private_key.private_bytes(
             encoding=PrivateKey.encoding,
             format=PrivateKey.format,
             encryption_algorithm=encryption_algorithm
@@ -109,14 +114,14 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
         """Decrypt byte data."""
-        return self.private_key.decrypt(
+        return self._private_key.decrypt(
             encrypted_data,
             padding=PrivateKey.encryption_padding
         )
 
     def sign(self, data: bytes) -> bytes:
         """Sign byte data."""
-        return self.private_key.sign(
+        return self._private_key.sign(
             data,
             padding=PrivateKey.signing_padding,
             algorithm=PrivateKey.signing_algorithm
@@ -133,7 +138,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         -------
         Public Key object.
         """
-        public_key_object = self.private_key.public_key()
+        public_key_object = self._private_key.public_key()
         self._public_key = PublicKey(public_key_object)
         return self._public_key
 
@@ -144,7 +149,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
     format = serialization.PublicFormat.SubjectPublicKeyInfo
 
     def __init__(self, public_key_object: RSAPublicKey) -> None:
-        self.public_key = public_key_object
+        self._public_key = public_key_object
 
     @staticmethod
     def load(serialized_key: bytes) -> PublicKey:
@@ -169,14 +174,14 @@ class PublicKey(BasePublicKey, PaddingMixin):
         -------
         PEM encoded serialized Public Key.
         """
-        return self.public_key.public_bytes(
+        return self._public_key.public_bytes(
             encoding=PublicKey.encoding,
             format=PublicKey.format
         )
 
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt byte data using this Public Key."""
-        return self.public_key.encrypt(
+        return self._public_key.encrypt(
             data,
             padding=PublicKey.encryption_padding
         )
@@ -189,7 +194,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
         True if signature matches, otherwise False.
         """
         try:
-            self.public_key.verify(
+            self._public_key.verify(
                 signature,
                 data,
                 PublicKey.signing_padding,

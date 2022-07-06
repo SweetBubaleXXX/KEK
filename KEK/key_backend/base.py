@@ -48,9 +48,6 @@ class BasePrivateKey:
     def verify(self) -> bool:
         pass
 
-    def gen_public_key(self) -> object:
-        pass
-
 
 class BasePublicKey:
     algorithm: str

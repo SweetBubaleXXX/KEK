@@ -21,14 +21,24 @@ class SymmetricKey(BaseSymmetricKey):
             raise ValueError(
                 f"Invalid key/iv size for {self.algorithm} algorithm. "
                 f"Should be one of {list(self.key_sizes)}.")
-        self.key = key
-        self.iv = iv
-        self.cipher = Cipher(AES(key), modes.CBC(iv))
+        self._key = key
+        self._iv = iv
+        self._cipher = Cipher(AES(key), modes.CBC(iv))
 
     @property
     def key_size(self) -> int:
-        """Length of key in bits."""
-        return len(self.key) * 8
+        """Size of key in bits."""
+        return len(self._key) * 8
+
+    @property
+    def key(self) -> bytes:
+        """Byte data of key."""
+        return self._key
+
+    @property
+    def iv(self) -> bytes:
+        """Byte data of iv."""
+        return self._iv
 
     @staticmethod
     def generate(key_size: int = 256) -> SymmetricKey:
@@ -60,7 +70,7 @@ class SymmetricKey(BaseSymmetricKey):
         Encrypted bytes.
         """
         padder = PKCS7(self.block_size).padder()
-        encryptor = self.cipher.encryptor()
+        encryptor = self._cipher.encryptor()
         padded_data = padder.update(data) + padder.finalize()
         return encryptor.update(padded_data) + encryptor.finalize()
 
@@ -77,7 +87,7 @@ class SymmetricKey(BaseSymmetricKey):
         Decrypted bytes.
         """
         unpadder = PKCS7(self.block_size).unpadder()
-        decryptor = self.cipher.decryptor()
+        decryptor = self._cipher.decryptor()
         decrypted_data = decryptor.update(encrypted_data)
         decrypted_data += decryptor.finalize()
         return unpadder.update(decrypted_data) + unpadder.finalize()
