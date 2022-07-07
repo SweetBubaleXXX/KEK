@@ -144,8 +144,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
 
 class PublicKey(BasePublicKey, PaddingMixin):
-    algorithm = "RSA"
-    encoding = serialization.Encoding.PEM
+    algorithm = PrivateKey.algorithm
+    encoding = PrivateKey.encoding
     format = serialization.PublicFormat.SubjectPublicKeyInfo
 
     def __init__(self, public_key_object: RSAPublicKey) -> None:

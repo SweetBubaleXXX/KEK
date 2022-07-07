@@ -4,6 +4,10 @@ class BaseSymmetricKey:
     def __init__(self) -> None:
         pass
 
+    @property
+    def key(self) -> bytes:
+        pass
+
     @staticmethod
     def generate() -> object:
         pass
