@@ -13,7 +13,6 @@ class KEK(BasePrivateKey):
     id_length = 8
     default_size = 4096
     symmetric_key_size = 256
-    symmetric_iv_size = SymmetricKey.block_size
 
     def __init__(self, private_key_object: PrivateKey) -> None:
         self._private_key = private_key_object
@@ -56,12 +55,19 @@ class KEK(BasePrivateKey):
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
         encrypted_data_id = encrypted_data[:self.id_length]
-        if encrypted_data_id != self.key_id:
+        if encrypted_data_id != bytes.fromhex(self.key_id):
             raise ValueError("Can't decrypt this data because it "
                              "was encrypted with key that has different id.")
+        key_data_end_position = self.id_length + self.key_size // 8
         encrypted_key_data = encrypted_data[
-            self.id_length:self.id_length+self.key_size//8
+            self.id_length:key_data_end_position
         ]
+        symmetric_key_data = self._private_key.decrypt(encrypted_key_data)
+        symmetric_key_bytes = symmetric_key_data[:self.symmetric_key_size//8]
+        symmetric_key_iv = symmetric_key_data[self.symmetric_key_size//8:]
+        symmetric_key = SymmetricKey(symmetric_key_bytes, symmetric_key_iv)
+        return symmetric_key.decrypt(
+            encrypted_data[key_data_end_position:])
 
     def sign(self, data: bytes) -> bytes:
         return self._private_key.sign(data)
