@@ -47,7 +47,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             self._public_key = PublicKey(public_key_object)
         return self._public_key
 
-    @classmethod
+    @staticmethod
     def generate(key_size: Optional[int] = None) -> PrivateKey:
         """Generate Public Key with set key size.
 
@@ -68,7 +68,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         )
         return PrivateKey(private_key)
 
-    @classmethod
+    @staticmethod
     def load(serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKey:
         """Load Private Key from PEM encoded serialized byte data.
@@ -88,6 +88,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             serialized_key,
             password
         )
+        if not isinstance(private_key, RSAPrivateKey):
+            raise ValueError
         return PrivateKey(private_key)
 
     def serialize(self, password: Optional[bytes] = None) -> bytes:
@@ -150,7 +152,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
         """Public Key size in bits."""
         return self._public_key.key_size
 
-    @classmethod
+    @staticmethod
     def load(serialized_key: bytes) -> PublicKey:
         """Load Public Key from PEM encoded serialized byte data.
 
@@ -164,6 +166,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
         Public Key object.
         """
         public_key = serialization.load_pem_public_key(serialized_key)
+        if not isinstance(public_key, RSAPublicKey):
+            raise ValueError
         return PublicKey(public_key)
 
     def serialize(self) -> bytes:

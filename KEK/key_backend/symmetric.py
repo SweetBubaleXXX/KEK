@@ -40,7 +40,7 @@ class SymmetricKey(BaseSymmetricKey):
         """Byte data of iv."""
         return self._iv
 
-    @classmethod
+    @staticmethod
     def generate(key_size: int = 256) -> SymmetricKey:
         """Generate Symmetric Key with set key size.
 

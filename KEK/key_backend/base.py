@@ -25,7 +25,7 @@ class BaseSymmetricKey(ABC):
     def iv(self) -> bytes:
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def generate(key_size: int) -> BaseSymmetricKey:
         pass
@@ -43,10 +43,6 @@ class BasePrivateKey(ABC):
     algorithm: str
 
     @abstractmethod
-    def __init__(self, public_key_object: object) -> None:
-        pass
-
-    @abstractmethod
     def __init__(self, private_key_object: object) -> None:
         pass
 
@@ -60,12 +56,12 @@ class BasePrivateKey(ABC):
     def public_key(self) -> BasePublicKey:
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def generate(key_size: int) -> BasePrivateKey:
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def load(serialized_key: bytes, password: bytes) -> BasePrivateKey:
         pass
@@ -94,12 +90,16 @@ class BasePrivateKey(ABC):
 class BasePublicKey(ABC):
     algorithm: str
 
+    @abstractmethod
+    def __init__(self, public_key_object: object) -> None:
+        pass
+
     @property
     @abstractmethod
     def key_size(self) -> int:
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def load(serialized_key: bytes) -> BasePublicKey:
         pass

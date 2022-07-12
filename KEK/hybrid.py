@@ -36,12 +36,12 @@ class KEK(BasePrivateKey):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
 
-    @classmethod
+    @staticmethod
     def generate(key_size: Optional[int] = None) -> KEK:
         private_key = PrivateKey.generate(key_size or KEK.default_size)
         return KEK(private_key)
 
-    @classmethod
+    @staticmethod
     def load(serialized_key: bytes, password: Optional[bytes] = None) -> KEK:
         private_key = PrivateKey.load(serialized_key, password)
         return KEK(private_key)
@@ -95,7 +95,7 @@ class PublicKEK(BasePublicKey):
             self._key_id = digest.finalize()[:self.id_length].hex()
         return self._key_id
 
-    @classmethod
+    @staticmethod
     def load(serialized_key: bytes) -> PublicKEK:
         public_key = PublicKey.load(serialized_key)
         return PublicKEK(public_key)
