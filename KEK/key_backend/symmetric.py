@@ -12,7 +12,7 @@ from .base import BaseSymmetricKey
 class SymmetricKey(BaseSymmetricKey):
     algorithm = "AES-CBC"
     padding = "PKCS7"
-    key_sizes: frozenset = AES.key_sizes
+    key_sizes = (128, 192, 256)
     block_size = 128
 
     def __init__(self, key: bytes, iv: bytes) -> None:
@@ -20,7 +20,7 @@ class SymmetricKey(BaseSymmetricKey):
                 len(iv)*8 != self.block_size):
             raise ValueError(
                 f"Invalid key/iv size for {self.algorithm} algorithm. "
-                f"Should be one of {list(self.key_sizes)}.")
+                f"Should be one of {self.key_sizes}.")
         self._key = key
         self._iv = iv
         self._cipher = Cipher(AES(key), modes.CBC(iv))
@@ -40,7 +40,7 @@ class SymmetricKey(BaseSymmetricKey):
         """Byte data of iv."""
         return self._iv
 
-    @staticmethod
+    @classmethod
     def generate(key_size: int = 256) -> SymmetricKey:
         """Generate Symmetric Key with set key size.
 
@@ -76,7 +76,7 @@ class SymmetricKey(BaseSymmetricKey):
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
         """Decrypt byte data.
-        
+
         Parameters
         ----------
         encrypted_data : bytes

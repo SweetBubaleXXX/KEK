@@ -21,13 +21,15 @@ class PaddingMixin:
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
         salt_length=padding.PSS.MAX_LENGTH
     )
-    signing_algorithm = hashes.SHA256()
+    signing_hash_algorithm = hashes.SHA256()
 
 
 class PrivateKey(BasePrivateKey, PaddingMixin):
     algorithm = "RSA"
     encoding = serialization.Encoding.PEM
     format = serialization.PrivateFormat.PKCS8
+    key_sizes = (2048, 3072, 4096)
+    default_size = 2048
 
     def __init__(self, private_key_object: RSAPrivateKey) -> None:
         self._private_key = private_key_object
@@ -41,11 +43,12 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     def public_key(self) -> PublicKey:
         """Public Key object for this Private Key."""
         if not hasattr(self, "_public_key"):
-            self.gen_public_key()
+            public_key_object = self._private_key.public_key()
+            self._public_key = PublicKey(public_key_object)
         return self._public_key
 
-    @staticmethod
-    def generate(key_size: int = 4096) -> PrivateKey:
+    @classmethod
+    def generate(key_size: Optional[int] = None) -> PrivateKey:
         """Generate Public Key with set key size.
 
         Parameters
@@ -57,13 +60,15 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         -------
         Private Key object.
         """
+        if key_size and key_size not in PrivateKey.key_sizes:
+            raise ValueError
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=key_size
+            key_size=key_size or PrivateKey.default_size
         )
         return PrivateKey(private_key)
 
-    @staticmethod
+    @classmethod
     def load(serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKey:
         """Load Private Key from PEM encoded serialized byte data.
@@ -124,23 +129,12 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         return self._private_key.sign(
             data,
             padding=PrivateKey.signing_padding,
-            algorithm=PrivateKey.signing_algorithm
+            algorithm=PrivateKey.signing_hash_algorithm
         )
 
     def verify(self, signature: bytes, data: bytes) -> bool:
         """Verify sighned data with Public Key generated for this Private Key."""
         return self.public_key.verify(signature, data)
-
-    def gen_public_key(self) -> PublicKey:
-        """Generate Public Key for this Private Key.
-
-        Returns
-        -------
-        Public Key object.
-        """
-        public_key_object = self._private_key.public_key()
-        self._public_key = PublicKey(public_key_object)
-        return self._public_key
 
 
 class PublicKey(BasePublicKey, PaddingMixin):
@@ -151,7 +145,12 @@ class PublicKey(BasePublicKey, PaddingMixin):
     def __init__(self, public_key_object: RSAPublicKey) -> None:
         self._public_key = public_key_object
 
-    @staticmethod
+    @property
+    def key_size(self) -> int:
+        """Public Key size in bits."""
+        return self._public_key.key_size
+
+    @classmethod
     def load(serialized_key: bytes) -> PublicKey:
         """Load Public Key from PEM encoded serialized byte data.
 
@@ -198,7 +197,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
                 signature,
                 data,
                 PublicKey.signing_padding,
-                PublicKey.signing_algorithm
+                PublicKey.signing_hash_algorithm
             )
         except InvalidSignature:
             return False

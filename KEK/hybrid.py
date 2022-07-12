@@ -11,6 +11,7 @@ from .key_backend.base import BasePrivateKey, BasePublicKey
 class KEK(BasePrivateKey):
     algorithm = "KEK"
     id_length = 8
+    key_sizes = PrivateKey.key_sizes
     default_size = 4096
     symmetric_key_size = 256
 
@@ -35,14 +36,12 @@ class KEK(BasePrivateKey):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
 
-    @staticmethod
+    @classmethod
     def generate(key_size: Optional[int] = None) -> KEK:
-        if key_size is None:
-            key_size = KEK.default_size
-        private_key = PrivateKey.generate(key_size)
+        private_key = PrivateKey.generate(key_size or KEK.default_size)
         return KEK(private_key)
 
-    @staticmethod
+    @classmethod
     def load(serialized_key: bytes, password: Optional[bytes] = None) -> KEK:
         private_key = PrivateKey.load(serialized_key, password)
         return KEK(private_key)
@@ -51,7 +50,7 @@ class KEK(BasePrivateKey):
         return self._private_key.serialize(password)
 
     def encrypt(self, data: bytes) -> bytes:
-        return self._public_key.encrypt(data)
+        return self.public_key.encrypt(data)
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
         encrypted_data_id = encrypted_data[:self.id_length]
@@ -85,6 +84,10 @@ class PublicKEK(BasePublicKey):
         self._public_key = public_key_object
 
     @property
+    def key_size(self) -> int:
+        return self._public_key.key_size
+
+    @property
     def key_id(self) -> str:
         if not hasattr(self, "_key_id"):
             digest = hashes.Hash(hashes.SHA256())
@@ -92,7 +95,7 @@ class PublicKEK(BasePublicKey):
             self._key_id = digest.finalize()[:self.id_length].hex()
         return self._key_id
 
-    @staticmethod
+    @classmethod
     def load(serialized_key: bytes) -> PublicKEK:
         public_key = PublicKey.load(serialized_key)
         return PublicKEK(public_key)

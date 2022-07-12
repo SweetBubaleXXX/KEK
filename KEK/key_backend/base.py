@@ -1,73 +1,117 @@
-class BaseSymmetricKey:
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class BaseSymmetricKey(ABC):
     algorithm: str
 
-    def __init__(self) -> None:
+    @abstractmethod
+    def __init__(self, key: bytes, iv: bytes) -> None:
         pass
 
     @property
+    @abstractmethod
+    def key_size(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
     def key(self) -> bytes:
         pass
 
-    @staticmethod
-    def generate() -> object:
+    @property
+    @abstractmethod
+    def iv(self) -> bytes:
         pass
 
-    def encrypt(self) -> bytes:
+    @classmethod
+    @abstractmethod
+    def generate(key_size: int) -> BaseSymmetricKey:
         pass
 
-    def decrypt(self) -> bytes:
+    @abstractmethod
+    def encrypt(self, data: bytes) -> bytes:
+        pass
+
+    @abstractmethod
+    def decrypt(self, encrypted_data: bytes) -> bytes:
         pass
 
 
-class BasePrivateKey:
+class BasePrivateKey(ABC):
     algorithm: str
 
-    def __init__(self) -> None:
+    @abstractmethod
+    def __init__(self, public_key_object: object) -> None:
+        pass
+
+    @abstractmethod
+    def __init__(self, private_key_object: object) -> None:
         pass
 
     @property
-    def public_key(self) -> object:
+    @abstractmethod
+    def key_size(self) -> int:
         pass
 
-    @staticmethod
-    def generate() -> object:
+    @property
+    @abstractmethod
+    def public_key(self) -> BasePublicKey:
         pass
 
-    @staticmethod
-    def load() -> object:
+    @classmethod
+    @abstractmethod
+    def generate(key_size: int) -> BasePrivateKey:
         pass
 
-    def serialize(self) -> bytes:
+    @classmethod
+    @abstractmethod
+    def load(serialized_key: bytes, password: bytes) -> BasePrivateKey:
         pass
 
-    def encrypt(self) -> bytes:
+    @abstractmethod
+    def serialize(self, password: bytes) -> bytes:
         pass
 
-    def decrypt(self) -> bytes:
+    @abstractmethod
+    def encrypt(self, data: bytes) -> bytes:
         pass
 
-    def sign(self) -> bytes:
+    @abstractmethod
+    def decrypt(self, encrypted_data: bytes) -> bytes:
         pass
 
-    def verify(self) -> bool:
+    @abstractmethod
+    def sign(self, data: bytes) -> bytes:
+        pass
+
+    @abstractmethod
+    def verify(self, signature: bytes, data: bytes) -> bool:
         pass
 
 
-class BasePublicKey:
+class BasePublicKey(ABC):
     algorithm: str
 
-    def __init__(self) -> None:
+    @property
+    @abstractmethod
+    def key_size(self) -> int:
         pass
 
-    @staticmethod
-    def load() -> object:
+    @classmethod
+    @abstractmethod
+    def load(serialized_key: bytes) -> BasePublicKey:
         pass
 
+    @abstractmethod
     def serialize(self) -> bytes:
         pass
 
-    def encrypt(self) -> bytes:
+    @abstractmethod
+    def encrypt(self, data: bytes) -> bytes:
         pass
 
-    def verify(self) -> bool:
+    @abstractmethod
+    def verify(self, signature: bytes, data: bytes) -> bool:
         pass
