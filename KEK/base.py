@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Iterable, Type
 
 
 class BaseSymmetricKey(ABC):
     algorithm: str
+    key_sizes: Iterable
 
     @abstractmethod
     def __init__(self, key: bytes, iv: bytes) -> None:
@@ -25,9 +27,10 @@ class BaseSymmetricKey(ABC):
     def iv(self) -> bytes:
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def generate(key_size: int) -> BaseSymmetricKey:
+    def generate(cls: Type[BaseSymmetricKey],
+                 key_size: int) -> BaseSymmetricKey:
         pass
 
     @abstractmethod
@@ -41,6 +44,7 @@ class BaseSymmetricKey(ABC):
 
 class BasePrivateKey(ABC):
     algorithm: str
+    key_sizes: Iterable
 
     @abstractmethod
     def __init__(self, private_key_object: object) -> None:
@@ -56,14 +60,15 @@ class BasePrivateKey(ABC):
     def public_key(self) -> BasePublicKey:
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def generate(key_size: int) -> BasePrivateKey:
+    def generate(cls: Type[BasePrivateKey], key_size: int) -> BasePrivateKey:
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def load(serialized_key: bytes, password: bytes) -> BasePrivateKey:
+    def load(cls: Type[BasePrivateKey], serialized_key: bytes,
+             password: bytes) -> BasePrivateKey:
         pass
 
     @abstractmethod
@@ -99,9 +104,9 @@ class BasePublicKey(ABC):
     def key_size(self) -> int:
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def load(serialized_key: bytes) -> BasePublicKey:
+    def load(cls: Type[BasePublicKey], serialized_key: bytes) -> BasePublicKey:
         pass
 
     @abstractmethod

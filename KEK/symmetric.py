@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Type, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
@@ -40,8 +41,8 @@ class SymmetricKey(BaseSymmetricKey):
         """Byte data of iv."""
         return self._iv
 
-    @staticmethod
-    def generate(key_size: int = 256) -> SymmetricKey:
+    @classmethod
+    def generate(cls: Type[SymmetricKey], key_size: int = 256) -> SymmetricKey:
         """Generate Symmetric Key with set key size.
 
         Parameters
@@ -54,8 +55,8 @@ class SymmetricKey(BaseSymmetricKey):
         Symmetric Key object.
         """
         key = os.urandom(key_size // 8)
-        iv = os.urandom(SymmetricKey.block_size // 8)
-        return SymmetricKey(key, iv)
+        iv = os.urandom(cls.block_size // 8)
+        return cls(key, iv)
 
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt byte data.

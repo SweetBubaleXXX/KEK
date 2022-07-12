@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Type
 
 from cryptography.hazmat.primitives import hashes
 
-from .key_backend import PrivateKey, PublicKey, SymmetricKey
-from .key_backend.base import BasePrivateKey, BasePublicKey
+from .asymmetric import PrivateKey, PublicKey
+from .base import BasePrivateKey, BasePublicKey
+from .symmetric import SymmetricKey
 
 
-class KEK(BasePrivateKey):
-    algorithm = "KEK"
+class PrivateKEK(BasePrivateKey):
+    algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
     id_length = 8
     key_sizes = PrivateKey.key_sizes
     default_size = 4096
@@ -36,15 +37,17 @@ class KEK(BasePrivateKey):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
 
-    @staticmethod
-    def generate(key_size: Optional[int] = None) -> KEK:
-        private_key = PrivateKey.generate(key_size or KEK.default_size)
-        return KEK(private_key)
+    @classmethod
+    def generate(cls: Type[PrivateKEK],
+                 key_size: Optional[int] = None) -> PrivateKEK:
+        private_key = PrivateKey.generate(key_size or cls.default_size)
+        return cls(private_key)
 
-    @staticmethod
-    def load(serialized_key: bytes, password: Optional[bytes] = None) -> KEK:
+    @classmethod
+    def load(cls: Type[PrivateKEK], serialized_key: bytes,
+             password: Optional[bytes] = None) -> PrivateKEK:
         private_key = PrivateKey.load(serialized_key, password)
-        return KEK(private_key)
+        return cls(private_key)
 
     def serialize(self, password: Optional[bytes] = None) -> bytes:
         return self._private_key.serialize(password)
@@ -53,8 +56,8 @@ class KEK(BasePrivateKey):
         return self.public_key.encrypt(data)
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
-        encrypted_data_id = encrypted_data[:self.id_length]
-        if encrypted_data_id != bytes.fromhex(self.key_id):
+        encryption_id = encrypted_data[:self.id_length]
+        if encryption_id != bytes.fromhex(self.key_id):
             raise ValueError("Can't decrypt this data because it "
                              "was encrypted with key that has different id.")
         key_data_end_position = self.id_length + self.key_size // 8
@@ -76,9 +79,9 @@ class KEK(BasePrivateKey):
 
 
 class PublicKEK(BasePublicKey):
-    algorithm = KEK.algorithm
-    id_length = KEK.id_length
-    symmetric_key_size = KEK.symmetric_key_size
+    algorithm = PrivateKEK.algorithm
+    id_length = PrivateKEK.id_length
+    symmetric_key_size = PrivateKEK.symmetric_key_size
 
     def __init__(self, public_key_object: PublicKey) -> None:
         self._public_key = public_key_object
@@ -95,10 +98,10 @@ class PublicKEK(BasePublicKey):
             self._key_id = digest.finalize()[:self.id_length].hex()
         return self._key_id
 
-    @staticmethod
-    def load(serialized_key: bytes) -> PublicKEK:
+    @classmethod
+    def load(cls: Type[PublicKEK], serialized_key: bytes) -> PublicKEK:
         public_key = PublicKey.load(serialized_key)
-        return PublicKEK(public_key)
+        return cls(public_key)
 
     def serialize(self) -> bytes:
         return self._public_key.serialize()

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Type
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.hazmat.primitives.asymmetric.rsa import (RSAPrivateKey,
-                                                           RSAPublicKey)
 
 from .base import BasePrivateKey, BasePublicKey
 
@@ -31,7 +29,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     key_sizes = (2048, 3072, 4096)
     default_size = 2048
 
-    def __init__(self, private_key_object: RSAPrivateKey) -> None:
+    def __init__(self, private_key_object: rsa.RSAPrivateKey) -> None:
         self._private_key = private_key_object
 
     @property
@@ -47,8 +45,9 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             self._public_key = PublicKey(public_key_object)
         return self._public_key
 
-    @staticmethod
-    def generate(key_size: Optional[int] = None) -> PrivateKey:
+    @classmethod
+    def generate(cls: Type[PrivateKey],
+                 key_size: Optional[int] = None) -> PrivateKey:
         """Generate Public Key with set key size.
 
         Parameters
@@ -60,16 +59,16 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         -------
         Private Key object.
         """
-        if key_size and key_size not in PrivateKey.key_sizes:
+        if key_size and key_size not in cls.key_sizes:
             raise ValueError
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=key_size or PrivateKey.default_size
+            key_size=key_size or cls.default_size
         )
-        return PrivateKey(private_key)
+        return cls(private_key)
 
-    @staticmethod
-    def load(serialized_key: bytes,
+    @classmethod
+    def load(cls: Type[PrivateKey], serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKey:
         """Load Private Key from PEM encoded serialized byte data.
 
@@ -88,9 +87,9 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             serialized_key,
             password
         )
-        if not isinstance(private_key, RSAPrivateKey):
+        if not isinstance(private_key, rsa.RSAPrivateKey):
             raise ValueError
-        return PrivateKey(private_key)
+        return cls(private_key)
 
     def serialize(self, password: Optional[bytes] = None) -> bytes:
         """Serialize Private Key. Can be encrypted with password.
@@ -135,7 +134,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         )
 
     def verify(self, signature: bytes, data: bytes) -> bool:
-        """Verify sighned data with Public Key generated for this Private Key."""
+        """Verify signature with Public Key generated for this Private Key."""
         return self.public_key.verify(signature, data)
 
 
@@ -144,7 +143,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
     encoding = PrivateKey.encoding
     format = serialization.PublicFormat.SubjectPublicKeyInfo
 
-    def __init__(self, public_key_object: RSAPublicKey) -> None:
+    def __init__(self, public_key_object: rsa.RSAPublicKey) -> None:
         self._public_key = public_key_object
 
     @property
@@ -152,8 +151,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
         """Public Key size in bits."""
         return self._public_key.key_size
 
-    @staticmethod
-    def load(serialized_key: bytes) -> PublicKey:
+    @classmethod
+    def load(cls: Type[PublicKey], serialized_key: bytes) -> PublicKey:
         """Load Public Key from PEM encoded serialized byte data.
 
         Parameters
@@ -166,9 +165,9 @@ class PublicKey(BasePublicKey, PaddingMixin):
         Public Key object.
         """
         public_key = serialization.load_pem_public_key(serialized_key)
-        if not isinstance(public_key, RSAPublicKey):
+        if not isinstance(public_key, rsa.RSAPublicKey):
             raise ValueError
-        return PublicKey(public_key)
+        return cls(public_key)
 
     def serialize(self) -> bytes:
         """Serialize Public Key.
@@ -190,7 +189,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
         )
 
     def verify(self, signature: bytes, data: bytes) -> bool:
-        """Verify sighned data with this Public Key.
+        """Verify signature data with this Public Key.
 
         Returns
         -------
