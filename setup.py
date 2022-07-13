@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="kek",
-      version="0.1.0",
+      version="0.1.1",
       description="Kinetic Effective Key",
       url="https://github.com/SweetBubaleXXX/KEK",
       author="SweetBubaleXXX",
