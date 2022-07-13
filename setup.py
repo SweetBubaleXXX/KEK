@@ -1,4 +1,3 @@
-from gettext import install
 from setuptools import setup
 
 setup(name="KEK",
