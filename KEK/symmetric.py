@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Type, cast
+from typing import Type
 
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
