@@ -1,6 +1,7 @@
 import unittest
+from typing import Type
 
-from KEK import symmetric, asymmetric, hybrid
+from KEK import asymmetric, base, hybrid, symmetric
 
 
 class TestSymmetricKey(unittest.TestCase):
@@ -30,27 +31,30 @@ class TestSymmetricKey(unittest.TestCase):
 
 
 class TestAsymmetricKey(unittest.TestCase):
+    private_key_class: Type[base.BasePrivateKey] = asymmetric.PrivateKey
+    public_key_class: Type[base.BasePublicKey] = asymmetric.PublicKey
+
     def setUp(self):
-        self.key_size = asymmetric.PrivateKey.key_sizes[1]
-        self.private_key = asymmetric.PrivateKey.generate(self.key_size)
+        self.key_size = self.private_key_class.key_sizes[1]
+        self.private_key = self.private_key_class.generate(self.key_size)
 
     def test_key_size_method(self):
         self.assertEqual(self.private_key.key_size, self.key_size)
 
     def test_public_key_creation(self):
         public_key = self.private_key.public_key
-        self.assertIsInstance(public_key, asymmetric.PublicKey)
+        self.assertIsInstance(public_key, self.public_key_class)
 
     def test_private_key_serialization(self):
         serialized_data = self.private_key.serialize(b"password")
-        loaded_key = asymmetric.PrivateKey.load(serialized_data, b"password")
-        self.assertIsInstance(loaded_key, asymmetric.PrivateKey)
+        loaded_key = self.private_key_class.load(serialized_data, b"password")
+        self.assertIsInstance(loaded_key, self.private_key_class)
 
     def test_public_key_serialization(self):
         public_ley = self.private_key.public_key
         serialized_data = public_ley.serialize()
-        loaded_key = asymmetric.PublicKey.load(serialized_data)
-        self.assertIsInstance(loaded_key, asymmetric.PublicKey)
+        loaded_key = self.public_key_class.load(serialized_data)
+        self.assertIsInstance(loaded_key, self.public_key_class)
 
     def test_decryption(self):
         data = b"byte data"
@@ -64,6 +68,21 @@ class TestAsymmetricKey(unittest.TestCase):
         encrypted_data = public_key.encrypt(data)
         decrypted_data = self.private_key.decrypt(encrypted_data)
         self.assertEqual(decrypted_data, data)
+
+    def test_verification(self):
+        data = b"byte data"
+        signature = self.private_key.sign(data)
+        self.assertTrue(self.private_key.public_key.verify(signature, data))
+
+
+class TestHybridKey(TestAsymmetricKey):
+    private_key_class = hybrid.PrivateKEK
+    public_key_class = hybrid.PublicKEK
+
+    def test_key_id(self):
+        private_id = self.private_key.key_id
+        public_id = self.private_key.public_key.key_id
+        self.assertEqual(private_id, public_id)
 
 
 if __name__ == "__main__":
