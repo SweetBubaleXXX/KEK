@@ -51,7 +51,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKey],
                  key_size: Optional[int] = None) -> PrivateKey:
-        """Generate Public Key with set key size.
+        """Generate Private Key with set key size.
 
         Parameters
         ----------
@@ -61,6 +61,10 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         Returns
         -------
         Private Key object.
+
+        Raises
+        ------
+        KeyGenerationError
         """
         if key_size and key_size not in cls.key_sizes:
             raise exceptions.KeyGenerationError(
@@ -88,6 +92,10 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         Returns
         -------
         Private Key object.
+
+        Raises
+        ------
+        KeyLoadingError
         """
         private_key = serialization.load_pem_private_key(
             serialized_key,
@@ -109,6 +117,10 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         Returns
         -------
         PEM encoded serialized Private Key.
+
+        Raises
+        ------
+        KeySerializationError
         """
         if password:
             encryption_algorithm = serialization.BestAvailableEncryption(
@@ -123,12 +135,40 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
     @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
-        """Encrypt byte data with Public Key generated for this Private Key."""
+        """Encrypt byte data with Public Key generated for this Private Key.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+
+        Returns
+        -------
+        Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
+        """
         return self.public_key.encrypt(data)
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
-        """Decrypt byte data."""
+        """Decrypt byte data.
+
+        Parameters
+        ----------
+        encrypted_data : bytes
+            Byte data to decrypt.
+
+        Returns
+        -------
+        Decrypted bytes.
+
+        Raises
+        ------
+        DecryptionError
+        """
         return self._private_key.decrypt(
             encrypted_data,
             padding=PrivateKey.encryption_padding
@@ -136,7 +176,21 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
     @raises(exceptions.SingingError)
     def sign(self, data: bytes) -> bytes:
-        """Sign byte data."""
+        """Sign byte data.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to sign.
+
+        Returns
+        -------
+        Singed byte data.
+
+        Raises
+        ------
+        SingingError
+        """
         return self._private_key.sign(
             data,
             padding=PrivateKey.signing_padding,
@@ -145,7 +199,23 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
-        """Verify signature with Public Key generated for this Private Key."""
+        """Verify signature with Public Key generated for this Private Key.
+
+        Parameters
+        ----------
+        signature : bytes
+            Signed byte data.
+        data : bytes
+            Original byte data.
+
+        Returns
+        -------
+        True if signature matches, otherwise False.
+
+        Raises
+        ------
+        VerificationError
+        """
         return self.public_key.verify(signature, data)
 
 
@@ -175,6 +245,10 @@ class PublicKey(BasePublicKey, PaddingMixin):
         Returns
         -------
         Public Key object.
+
+        Raises
+        ------
+        KeyLoadingError
         """
         public_key = serialization.load_pem_public_key(serialized_key)
         if not isinstance(public_key, rsa.RSAPublicKey):
@@ -188,6 +262,10 @@ class PublicKey(BasePublicKey, PaddingMixin):
         Returns
         -------
         PEM encoded serialized Public Key.
+
+        Raises
+        ------
+        KeySerializationError
         """
         return self._public_key.public_bytes(
             encoding=PublicKey.encoding,
@@ -196,7 +274,21 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
     @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
-        """Encrypt byte data using this Public Key."""
+        """Encrypt byte data using this Public Key.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+
+        Returns
+        -------
+        Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
+        """
         return self._public_key.encrypt(
             data,
             padding=PublicKey.encryption_padding
@@ -206,9 +298,20 @@ class PublicKey(BasePublicKey, PaddingMixin):
     def verify(self, signature: bytes, data: bytes) -> bool:
         """Verify signature data with this Public Key.
 
+        Parameters
+        ----------
+        signature : bytes
+            Signed byte data.
+        data : bytes
+            Original byte data.
+
         Returns
         -------
         True if signature matches, otherwise False.
+
+        Raises
+        ------
+        VerificationError
         """
         try:
             self._public_key.verify(

@@ -57,6 +57,10 @@ class SymmetricKey(BaseSymmetricKey):
         Returns
         -------
         Symmetric Key object.
+
+        Raises
+        ------
+        KeyGenerationError
         """
         key = os.urandom(key_size // 8)
         iv = os.urandom(cls.block_size // 8)
@@ -74,6 +78,10 @@ class SymmetricKey(BaseSymmetricKey):
         Returns
         -------
         Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
         """
         padder = PKCS7(self.block_size).padder()
         encryptor = self._cipher.encryptor()
@@ -92,6 +100,10 @@ class SymmetricKey(BaseSymmetricKey):
         Returns
         -------
         Decrypted bytes.
+
+        Raises
+        ------
+        DecryptionError
         """
         unpadder = PKCS7(self.block_size).unpadder()
         decryptor = self._cipher.decryptor()

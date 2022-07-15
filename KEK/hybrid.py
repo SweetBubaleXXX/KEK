@@ -23,10 +23,12 @@ class PrivateKEK(BasePrivateKey):
 
     @property
     def key_size(self) -> int:
+        """Private KEK size in bits."""
         return self._private_key.key_size
 
     @property
     def key_id(self) -> bytes:
+        """Id bytes for this key (key pair)."""
         if not hasattr(self, "_key_id"):
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._private_key.public_key.serialize())
@@ -35,6 +37,7 @@ class PrivateKEK(BasePrivateKey):
 
     @property
     def public_key(self) -> PublicKEK:
+        """Public KEK object for this Private KEK."""
         if not hasattr(self, "_public_key"):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
@@ -43,6 +46,21 @@ class PrivateKEK(BasePrivateKey):
     @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKEK],
                  key_size: Optional[int] = None) -> PrivateKEK:
+        """Generate Private KEK with set key size.
+
+        Parameters
+        ----------
+        key_size : int, optional
+            Size of key in bits.
+
+        Returns
+        -------
+        Private KEK object.
+
+        Raises
+        ------
+        KeyGenerationError
+        """
         private_key = PrivateKey.generate(key_size or cls.default_size)
         return cls(private_key)
 
@@ -50,19 +68,81 @@ class PrivateKEK(BasePrivateKey):
     @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PrivateKEK], serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKEK:
+        """Load Private KEK from PEM encoded serialized byte data.
+
+        Parameters
+        ----------
+        serialized_key : bytes
+            Encoded key.
+        password : bytes, optional
+            Password for encrypted serialized key.
+
+        Returns
+        -------
+        Private KEK object.
+
+        Raises
+        ------
+        KeyLoadingError
+        """
         private_key = PrivateKey.load(serialized_key, password)
         return cls(private_key)
 
     @raises(exceptions.KeySerializationError)
     def serialize(self, password: Optional[bytes] = None) -> bytes:
+        """Serialize Private KEK. Can be encrypted with password.
+
+        Parameters
+        ----------
+        password : bytes, optional
+            Password for key encryption.
+
+        Returns
+        -------
+        PEM encoded serialized Private KEK.
+
+        Raises
+        ------
+        KeySerializationError
+        """
         return self._private_key.serialize(password)
 
     @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
+        """Encrypt byte data with Public KEK generated for this Private KEK.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+
+        Returns
+        -------
+        Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
+        """
         return self.public_key.encrypt(data)
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
+        """Decrypt byte data.
+
+        Parameters
+        ----------
+        encrypted_data : bytes
+            Byte data to decrypt.
+
+        Returns
+        -------
+        Decrypted bytes.
+
+        Raises
+        ------
+        DecryptionError
+        """
         encryption_id = encrypted_data[:self.id_length]
         if encryption_id != self.key_id:
             raise exceptions.DecryptionError(
@@ -81,10 +161,42 @@ class PrivateKEK(BasePrivateKey):
 
     @raises(exceptions.SingingError)
     def sign(self, data: bytes) -> bytes:
+        """Sign byte data.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to sign.
+
+        Returns
+        -------
+        Singed byte data.
+
+        Raises
+        ------
+        SingingError
+        """
         return self._private_key.sign(data)
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
+        """Verify signature with Public KEK generated for this Private KEK.
+
+        Parameters
+        ----------
+        signature : bytes
+            Signed byte data.
+        data : bytes
+            Original byte data.
+
+        Returns
+        -------
+        True if signature matches, otherwise False.
+
+        Raises
+        ------
+        VerificationError
+        """
         return self._private_key.verify(signature, data)
 
 
@@ -98,10 +210,12 @@ class PublicKEK(BasePublicKey):
 
     @property
     def key_size(self) -> int:
+        """Public KEK size in bits."""
         return self._public_key.key_size
 
     @property
     def key_id(self) -> bytes:
+        """Id bytes for this key (key pair)."""
         if not hasattr(self, "_key_id"):
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._public_key.serialize())
@@ -111,15 +225,55 @@ class PublicKEK(BasePublicKey):
     @classmethod
     @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PublicKEK], serialized_key: bytes) -> PublicKEK:
+        """Load Public KEK from PEM encoded serialized byte data.
+
+        Parameters
+        ----------
+        serialized_key : bytes
+            Encoded key.
+
+        Returns
+        -------
+        Public KEK object.
+
+        Raises
+        ------
+        KeyLoadingError
+        """
         public_key = PublicKey.load(serialized_key)
         return cls(public_key)
 
     @raises(exceptions.KeySerializationError)
     def serialize(self) -> bytes:
+        """Serialize Public KEK.
+
+        Returns
+        -------
+        PEM encoded serialized Public KEK.
+
+        Raises
+        ------
+        KeySerializationError
+        """
         return self._public_key.serialize()
 
     @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
+        """Encrypt byte data using this Public KEK.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+
+        Returns
+        -------
+        Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
+        """
         symmetric_key = SymmetricKey.generate(self.symmetric_key_size)
         encrypted_part = symmetric_key.encrypt(data)
         encrypted_key_data = self._public_key.encrypt(
@@ -128,4 +282,21 @@ class PublicKEK(BasePublicKey):
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
+        """Verify signature data with this Public KEK.
+
+        Parameters
+        ----------
+        signature : bytes
+            Signed byte data.
+        data : bytes
+            Original byte data.
+
+        Returns
+        -------
+        True if signature matches, otherwise False.
+
+        Raises
+        ------
+        VerificationError
+        """
         return self._public_key.verify(signature, data)
