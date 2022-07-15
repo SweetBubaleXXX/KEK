@@ -4,8 +4,10 @@ from typing import Optional, Type
 
 from cryptography.hazmat.primitives import hashes
 
+from . import exceptions
 from .asymmetric import PrivateKey, PublicKey
 from .base import BasePrivateKey, BasePublicKey
+from .exceptions import raises
 from .symmetric import SymmetricKey
 
 
@@ -38,6 +40,7 @@ class PrivateKEK(BasePrivateKey):
         return self._public_key
 
     @classmethod
+    @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKEK],
                  key_size: Optional[int] = None) -> PrivateKEK:
         private_key = PrivateKey.generate(key_size or cls.default_size)
@@ -52,14 +55,17 @@ class PrivateKEK(BasePrivateKey):
     def serialize(self, password: Optional[bytes] = None) -> bytes:
         return self._private_key.serialize(password)
 
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
         return self.public_key.encrypt(data)
 
+    @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
         encryption_id = encrypted_data[:self.id_length]
         if encryption_id != bytes.fromhex(self.key_id):
-            raise ValueError("Can't decrypt this data because it "
-                             "was encrypted with key that has different id.")
+            raise exceptions.DecryptionError(
+                "Can't decrypt this data because it "
+                "was encrypted with key that has different id.")
         key_data_end_position = self.id_length + self.key_size // 8
         encrypted_key_data = encrypted_data[
             self.id_length:key_data_end_position

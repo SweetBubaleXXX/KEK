@@ -7,7 +7,9 @@ from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
 from cryptography.hazmat.primitives.padding import PKCS7
 
+from . import exceptions
 from .base import BaseSymmetricKey
+from .exceptions import raises
 
 
 class SymmetricKey(BaseSymmetricKey):
@@ -19,7 +21,7 @@ class SymmetricKey(BaseSymmetricKey):
     def __init__(self, key: bytes, iv: bytes) -> None:
         if (len(key)*8 not in self.key_sizes or
                 len(iv)*8 != self.block_size):
-            raise ValueError(
+            raise exceptions.KeyGenerationError(
                 f"Invalid key/iv size for {self.algorithm} algorithm. "
                 f"Should be one of {self.key_sizes}.")
         self._key = key
@@ -42,6 +44,7 @@ class SymmetricKey(BaseSymmetricKey):
         return self._iv
 
     @classmethod
+    @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[SymmetricKey], key_size: int = 256) -> SymmetricKey:
         """Generate Symmetric Key with set key size.
 
@@ -58,6 +61,7 @@ class SymmetricKey(BaseSymmetricKey):
         iv = os.urandom(cls.block_size // 8)
         return cls(key, iv)
 
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt byte data.
 
@@ -75,6 +79,7 @@ class SymmetricKey(BaseSymmetricKey):
         padded_data = padder.update(data) + padder.finalize()
         return encryptor.update(padded_data) + encryptor.finalize()
 
+    @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
         """Decrypt byte data.
 

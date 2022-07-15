@@ -6,7 +6,9 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
+from . import exceptions
 from .base import BasePrivateKey, BasePublicKey
+from .exceptions import raises
 
 
 class PaddingMixin:
@@ -46,6 +48,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         return self._public_key
 
     @classmethod
+    @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKey],
                  key_size: Optional[int] = None) -> PrivateKey:
         """Generate Public Key with set key size.
@@ -60,7 +63,9 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         Private Key object.
         """
         if key_size and key_size not in cls.key_sizes:
-            raise ValueError
+            raise exceptions.KeyGenerationError(
+                f"Invalid key size for {cls.algorithm} algorithm. "
+                f"Should be one of {cls.key_sizes}.")
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=key_size or cls.default_size
@@ -114,10 +119,12 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             encryption_algorithm=encryption_algorithm
         )
 
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt byte data with Public Key generated for this Private Key."""
         return self.public_key.encrypt(data)
 
+    @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
         """Decrypt byte data."""
         return self._private_key.decrypt(
