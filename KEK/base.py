@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, Type
+from typing import Iterable, Optional, Type
 
 
 class BaseSymmetricKey(ABC):
@@ -68,11 +68,11 @@ class BasePrivateKey(ABC):
     @classmethod
     @abstractmethod
     def load(cls: Type[BasePrivateKey], serialized_key: bytes,
-             password: bytes) -> BasePrivateKey:
+             password: Optional[bytes]) -> BasePrivateKey:
         pass
 
     @abstractmethod
-    def serialize(self, password: bytes) -> bytes:
+    def serialize(self, password: Optional[bytes]) -> bytes:
         pass
 
     @abstractmethod

@@ -26,11 +26,11 @@ class PrivateKEK(BasePrivateKey):
         return self._private_key.key_size
 
     @property
-    def key_id(self) -> str:
+    def key_id(self) -> bytes:
         if not hasattr(self, "_key_id"):
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._private_key.public_key.serialize())
-            self._key_id = digest.finalize()[:self.id_length].hex()
+            self._key_id = digest.finalize()[:self.id_length]
         return self._key_id
 
     @property
@@ -64,7 +64,7 @@ class PrivateKEK(BasePrivateKey):
     @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
         encryption_id = encrypted_data[:self.id_length]
-        if encryption_id != bytes.fromhex(self.key_id):
+        if encryption_id != self.key_id:
             raise exceptions.DecryptionError(
                 "Can't decrypt this data because it "
                 "was encrypted with key that has different id.")
@@ -101,11 +101,11 @@ class PublicKEK(BasePublicKey):
         return self._public_key.key_size
 
     @property
-    def key_id(self) -> str:
+    def key_id(self) -> bytes:
         if not hasattr(self, "_key_id"):
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._public_key.serialize())
-            self._key_id = digest.finalize()[:self.id_length].hex()
+            self._key_id = digest.finalize()[:self.id_length]
         return self._key_id
 
     @classmethod
@@ -124,7 +124,7 @@ class PublicKEK(BasePublicKey):
         encrypted_part = symmetric_key.encrypt(data)
         encrypted_key_data = self._public_key.encrypt(
             symmetric_key.key+symmetric_key.iv)
-        return bytes.fromhex(self.key_id) + encrypted_key_data + encrypted_part
+        return self.key_id + encrypted_key_data + encrypted_part
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
