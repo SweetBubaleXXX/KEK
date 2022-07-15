@@ -9,6 +9,18 @@ class KeyGenerationError(Exception):
         super().__init__(message)
 
 
+class KeyLoadingError(Exception):
+    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
+            "loading key")) -> None:
+        super().__init__(message)
+
+
+class KeySerializationError(Exception):
+    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
+            "serializing key")) -> None:
+        super().__init__(message)
+
+
 class EncryptionError(Exception):
     def __init__(self,
                  message: str = BASE_ERROR_MESSAGE.format(
@@ -19,6 +31,18 @@ class EncryptionError(Exception):
 class DecryptionError(Exception):
     def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
             "decrypting data")) -> None:
+        super().__init__(message)
+
+
+class SingingError(Exception):
+    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
+            "signing data")) -> None:
+        super().__init__(message)
+
+
+class VerificationError(Exception):
+    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
+            "verifying data")) -> None:
         super().__init__(message)
 
 

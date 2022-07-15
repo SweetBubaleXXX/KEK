@@ -73,6 +73,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         return cls(private_key)
 
     @classmethod
+    @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PrivateKey], serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKey:
         """Load Private Key from PEM encoded serialized byte data.
@@ -93,9 +94,10 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             password
         )
         if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError
+            raise exceptions.KeyLoadingError("Invalid key format.")
         return cls(private_key)
 
+    @raises(exceptions.KeySerializationError)
     def serialize(self, password: Optional[bytes] = None) -> bytes:
         """Serialize Private Key. Can be encrypted with password.
 
@@ -132,6 +134,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             padding=PrivateKey.encryption_padding
         )
 
+    @raises(exceptions.SingingError)
     def sign(self, data: bytes) -> bytes:
         """Sign byte data."""
         return self._private_key.sign(
@@ -140,6 +143,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             algorithm=PrivateKey.signing_hash_algorithm
         )
 
+    @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
         """Verify signature with Public Key generated for this Private Key."""
         return self.public_key.verify(signature, data)
@@ -159,6 +163,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
         return self._public_key.key_size
 
     @classmethod
+    @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PublicKey], serialized_key: bytes) -> PublicKey:
         """Load Public Key from PEM encoded serialized byte data.
 
@@ -173,9 +178,10 @@ class PublicKey(BasePublicKey, PaddingMixin):
         """
         public_key = serialization.load_pem_public_key(serialized_key)
         if not isinstance(public_key, rsa.RSAPublicKey):
-            raise ValueError
+            raise exceptions.KeyLoadingError("Invalid key format.")
         return cls(public_key)
 
+    @raises(exceptions.KeySerializationError)
     def serialize(self) -> bytes:
         """Serialize Public Key.
 
@@ -188,6 +194,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
             format=PublicKey.format
         )
 
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt byte data using this Public Key."""
         return self._public_key.encrypt(
@@ -195,6 +202,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
             padding=PublicKey.encryption_padding
         )
 
+    @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
         """Verify signature data with this Public Key.
 

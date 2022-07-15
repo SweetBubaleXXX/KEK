@@ -18,10 +18,11 @@ class SymmetricKey(BaseSymmetricKey):
     key_sizes = (128, 192, 256)
     block_size = 128
 
+    @raises(exceptions.KeyLoadingError)
     def __init__(self, key: bytes, iv: bytes) -> None:
         if (len(key)*8 not in self.key_sizes or
                 len(iv)*8 != self.block_size):
-            raise exceptions.KeyGenerationError(
+            raise exceptions.KeyLoadingError(
                 f"Invalid key/iv size for {self.algorithm} algorithm. "
                 f"Should be one of {self.key_sizes}.")
         self._key = key

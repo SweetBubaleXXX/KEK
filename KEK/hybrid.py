@@ -47,11 +47,13 @@ class PrivateKEK(BasePrivateKey):
         return cls(private_key)
 
     @classmethod
+    @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PrivateKEK], serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKEK:
         private_key = PrivateKey.load(serialized_key, password)
         return cls(private_key)
 
+    @raises(exceptions.KeySerializationError)
     def serialize(self, password: Optional[bytes] = None) -> bytes:
         return self._private_key.serialize(password)
 
@@ -77,9 +79,11 @@ class PrivateKEK(BasePrivateKey):
         return symmetric_key.decrypt(
             encrypted_data[key_data_end_position:])
 
+    @raises(exceptions.SingingError)
     def sign(self, data: bytes) -> bytes:
         return self._private_key.sign(data)
 
+    @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
         return self._private_key.verify(signature, data)
 
@@ -105,13 +109,16 @@ class PublicKEK(BasePublicKey):
         return self._key_id
 
     @classmethod
+    @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PublicKEK], serialized_key: bytes) -> PublicKEK:
         public_key = PublicKey.load(serialized_key)
         return cls(public_key)
 
+    @raises(exceptions.KeySerializationError)
     def serialize(self) -> bytes:
         return self._public_key.serialize()
 
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
         symmetric_key = SymmetricKey.generate(self.symmetric_key_size)
         encrypted_part = symmetric_key.encrypt(data)
@@ -119,5 +126,6 @@ class PublicKEK(BasePublicKey):
             symmetric_key.key+symmetric_key.iv)
         return bytes.fromhex(self.key_id) + encrypted_key_data + encrypted_part
 
+    @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
         return self._public_key.verify(signature, data)
