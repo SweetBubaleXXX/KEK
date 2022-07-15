@@ -25,6 +25,17 @@ class PaddingMixin:
 
 
 class PrivateKey(BasePrivateKey, PaddingMixin):
+    """Provides asymmetric encryption.
+
+    Attributes
+    ----------
+    algorthm : str
+        Name of encryption algorithm.
+    key_sizes : iterable
+        Available sizes (in bits) for key.
+    default_size : int
+        Default key size in bits.
+    """
     algorithm = "RSA"
     encoding = serialization.Encoding.PEM
     format = serialization.PrivateFormat.PKCS8
@@ -32,6 +43,11 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     default_size = 2048
 
     def __init__(self, private_key_object: rsa.RSAPrivateKey) -> None:
+        """
+        Parameters
+        ----------
+        private_key_object : cryptography.hazmat.primitives. ... .RSAPrivateKey
+        """
         self._private_key = private_key_object
 
     @property
@@ -220,11 +236,23 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
 
 class PublicKey(BasePublicKey, PaddingMixin):
+    """Provides asymmetric encryption via public key.
+
+    Attributes
+    ----------
+    algorthm : str
+        Name of encryption algorithm.
+    """
     algorithm = PrivateKey.algorithm
     encoding = PrivateKey.encoding
     format = serialization.PublicFormat.SubjectPublicKeyInfo
 
     def __init__(self, public_key_object: rsa.RSAPublicKey) -> None:
+        """
+        Parameters
+        ----------
+        public_key_object : cryptography.hazmat.primitives. ... .RSAPublicKey
+        """
         self._public_key = public_key_object
 
     @property

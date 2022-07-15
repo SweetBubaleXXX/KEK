@@ -12,6 +12,23 @@ from .symmetric import SymmetricKey
 
 
 class PrivateKEK(BasePrivateKey):
+    """Provides hybrid (asymmetric + symmetric) encryption.
+
+    This key is based on Private Key and Symmetric Key.
+
+    Attributes
+    ----------
+    algorthm : str
+        Name of encryption algorithm.
+    id_length : int
+        Length of id bytes.
+    key_sizes : iterable
+        Available sizes (in bits) for key.
+    default_size : int
+        Default key size.
+    symmetric_key_size : int
+        Size (in bits) of Symmetric Key used for encryption.
+    """
     algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
     id_length = 8
     key_sizes = PrivateKey.key_sizes
@@ -19,6 +36,11 @@ class PrivateKEK(BasePrivateKey):
     symmetric_key_size = 256
 
     def __init__(self, private_key_object: PrivateKey) -> None:
+        """
+        Parameters
+        ----------
+        private_key_object : PrivateKey
+        """
         self._private_key = private_key_object
 
     @property
@@ -201,11 +223,29 @@ class PrivateKEK(BasePrivateKey):
 
 
 class PublicKEK(BasePublicKey):
+    """Provides hybrid (asymmetric + symmetric) encryption via public key.
+
+    This key is based on Private Key and Symmetric Key.
+
+    Attributes
+    ----------
+    algorthm : str
+        Name of encryption algorithm.
+    id_length : int
+        Length of id bytes.
+    symmetric_key_size : int
+        Size (in bits) of Symmetric Key used for encryption.
+    """
     algorithm = PrivateKEK.algorithm
     id_length = PrivateKEK.id_length
     symmetric_key_size = PrivateKEK.symmetric_key_size
 
     def __init__(self, public_key_object: PublicKey) -> None:
+        """
+        Parameters
+        ----------
+        public_key_object : PublicKey
+        """
         self._public_key = public_key_object
 
     @property

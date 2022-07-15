@@ -13,6 +13,19 @@ from .exceptions import raises
 
 
 class SymmetricKey(BaseSymmetricKey):
+    """Provides symmetric encryption with auto padding.
+
+    Attributes
+    ----------
+    algorthm : str
+        Name of encryption algorithm.
+    padding : str
+        Name of padding standart.
+    key_sizes : iterable
+        Available sizes (in bits) for key.
+    block_size : int
+        Encryption block size in bits.
+    """
     algorithm = "AES-CBC"
     padding = "PKCS7"
     key_sizes = (128, 192, 256)
@@ -20,6 +33,12 @@ class SymmetricKey(BaseSymmetricKey):
 
     @raises(exceptions.KeyLoadingError)
     def __init__(self, key: bytes, iv: bytes) -> None:
+        """
+        Parameters
+        ----------
+        key : bytes
+        iv : bytes
+        """
         if (len(key)*8 not in self.key_sizes or
                 len(iv)*8 != self.block_size):
             raise exceptions.KeyLoadingError(
