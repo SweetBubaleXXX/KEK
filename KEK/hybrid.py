@@ -4,8 +4,7 @@ from typing import Optional, Type
 
 from cryptography.hazmat.primitives import hashes
 
-from . import exceptions
-from ._version import __version__
+from . import __version__, exceptions
 from .asymmetric import PrivateKey, PublicKey
 from .base import BasePrivateKey, BasePublicKey
 from .exceptions import raises

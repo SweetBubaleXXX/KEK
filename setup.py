@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-from KEK._version import __version__
+from KEK import __version__
 
 setup(name="gnukek",
       version=__version__,
