@@ -9,6 +9,7 @@ setup(name="gnukek",
       license="GNU General Public License v3.0",
       url="https://github.com/SweetBubaleXXX/KEK",
       project_urls={
+          "Documentation": "https://gnukek.readthedocs.io/en/latest/",
           "Source": "https://github.com/SweetBubaleXXX/KEK",
           "Bug Tracker": "https://github.com/SweetBubaleXXX/KEK/issues",
       },
@@ -31,6 +32,10 @@ setup(name="gnukek",
           "build": [
               "build",
               "twine"
+          ],
+          "docs": [
+              "sphinx",
+              "sphinx_rtd_theme"
           ]
       },
       python_requires=">=3.7",
