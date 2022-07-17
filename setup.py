@@ -2,11 +2,16 @@ from setuptools import find_packages, setup
 
 from KEK import __version__
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(name="gnukek",
       version=__version__,
-      description="Kinetic Effective Key",
       author="SweetBubaleXXX",
       license="GNU General Public License v3.0",
+      description="Kinetic Effective Key",
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       url="https://github.com/SweetBubaleXXX/KEK",
       project_urls={
           "Documentation": "https://gnukek.readthedocs.io/en/latest/",
@@ -14,7 +19,7 @@ setup(name="gnukek",
           "Bug Tracker": "https://github.com/SweetBubaleXXX/KEK/issues",
       },
       classifiers=[
-          "Development Status :: 3 - Alpha",
+          "Development Status :: 4 - Beta",
           "Topic :: Security :: Cryptography",
           "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
           "Programming Language :: Python :: 3",

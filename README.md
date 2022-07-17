@@ -96,15 +96,15 @@ loaded_private_key = PrivateKEK.load(serialized_key)
 
 - Ecryption:
 
-    1. Data is encrypted via fresh generated [symmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.symmetric).
+    - Data is encrypted via fresh generated [symmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.symmetric).
 
-    2. Symmetric key is encrypted via public [asymmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.asymmetric).
+    - Symmetric key is encrypted via public [asymmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.asymmetric).
 
 - Decryption:
 
-    1. Symmetric key is decrypted via private [asymmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.asymmetric).
+    - Symmetric key is decrypted via private [asymmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.asymmetric).
 
-    2. Data is decrypted via loaded [symmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.symmetric).
+    - Data is decrypted via loaded [symmetric key](https://gnukek.readthedocs.io/en/latest/KEK.html#module-KEK.symmetric).
 
 ### Encrypted data consists of:
 
