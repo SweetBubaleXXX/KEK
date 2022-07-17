@@ -1,7 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
+from KEK._version import __version__
 
 setup(name="gnukek",
-      version="0.2.1",
+      version=__version__,
       description="Kinetic Effective Key",
       author="SweetBubaleXXX",
       license="GNU General Public License v3.0",

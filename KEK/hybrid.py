@@ -5,6 +5,7 @@ from typing import Optional, Type
 from cryptography.hazmat.primitives import hashes
 
 from . import exceptions
+from ._version import __version__
 from .asymmetric import PrivateKey, PublicKey
 from .base import BasePrivateKey, BasePublicKey
 from .exceptions import raises
@@ -20,6 +21,9 @@ class PrivateKEK(BasePrivateKey):
     ----------
     algorthm : str
         Name of encryption algorithm.
+    version : int
+        Version of key.
+        Keys with different versions are incompatible.
     id_length : int
         Length of id bytes.
     key_sizes : iterable
@@ -30,6 +34,7 @@ class PrivateKEK(BasePrivateKey):
         Size (in bits) of Symmetric Key used for encryption.
     """
     algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
+    version = int(__version__[0])
     id_length = 8
     key_sizes = PrivateKey.key_sizes
     default_size = 4096
@@ -170,6 +175,13 @@ class PrivateKEK(BasePrivateKey):
             raise exceptions.DecryptionError(
                 "Can't decrypt this data because it "
                 "was encrypted with key that has different id.")
+        key_version = encrypted_data[-1]
+        if key_version != self.version:
+            raise exceptions.DecryptionError(
+                "Can't decrypt this data because it "
+                "was encrypted with different version of key. "
+                f"Your key version - '{self.version}'. "
+                f"Data is encrypted with version '{key_version}' of key.")
         key_data_end_position = self.id_length + self.key_size // 8
         encrypted_key_data = encrypted_data[
             self.id_length:key_data_end_position
@@ -179,7 +191,7 @@ class PrivateKEK(BasePrivateKey):
         symmetric_key_iv = symmetric_key_data[self.symmetric_key_size//8:]
         symmetric_key = SymmetricKey(symmetric_key_bytes, symmetric_key_iv)
         return symmetric_key.decrypt(
-            encrypted_data[key_data_end_position:])
+            encrypted_data[key_data_end_position:-1])
 
     @raises(exceptions.SingingError)
     def sign(self, data: bytes) -> bytes:
@@ -231,12 +243,16 @@ class PublicKEK(BasePublicKey):
     ----------
     algorthm : str
         Name of encryption algorithm.
+    version : int
+        Version of key.
+        Keys with different versions are incompatible.
     id_length : int
         Length of id bytes.
     symmetric_key_size : int
         Size (in bits) of Symmetric Key used for encryption.
     """
     algorithm = PrivateKEK.algorithm
+    version = PrivateKEK.version
     id_length = PrivateKEK.id_length
     symmetric_key_size = PrivateKEK.symmetric_key_size
 
@@ -318,7 +334,10 @@ class PublicKEK(BasePublicKey):
         encrypted_part = symmetric_key.encrypt(data)
         encrypted_key_data = self._public_key.encrypt(
             symmetric_key.key+symmetric_key.iv)
-        return self.key_id + encrypted_key_data + encrypted_part
+        return (self.key_id +
+                encrypted_key_data +
+                encrypted_part +
+                self.version.to_bytes(1, "big"))
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
