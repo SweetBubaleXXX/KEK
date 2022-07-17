@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import Callable, Type
 
 BASE_ERROR_MESSAGE = "Exception occurred while {}."
@@ -48,6 +49,7 @@ class VerificationError(Exception):
 
 def raises(exception: Type[Exception]) -> Callable:
     def decorator(func: Callable) -> Callable:
+        @wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
