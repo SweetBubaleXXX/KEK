@@ -35,7 +35,7 @@ class DecryptionError(Exception):
         super().__init__(message)
 
 
-class SingingError(Exception):
+class SigningError(Exception):
     def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
             "signing data")) -> None:
         super().__init__(message)

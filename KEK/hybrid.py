@@ -192,7 +192,7 @@ class PrivateKEK(BasePrivateKey):
         return symmetric_key.decrypt(
             encrypted_data[key_data_end_position:-1])
 
-    @raises(exceptions.SingingError)
+    @raises(exceptions.SigningError)
     def sign(self, data: bytes) -> bytes:
         """Sign byte data.
 
@@ -207,7 +207,7 @@ class PrivateKEK(BasePrivateKey):
 
         Raises
         ------
-        SingingError
+        SigningError
         """
         return self._private_key.sign(data)
 

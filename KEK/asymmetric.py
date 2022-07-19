@@ -190,7 +190,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             padding=PrivateKey.encryption_padding
         )
 
-    @raises(exceptions.SingingError)
+    @raises(exceptions.SigningError)
     def sign(self, data: bytes) -> bytes:
         """Sign byte data.
 
@@ -205,7 +205,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Raises
         ------
-        SingingError
+        SigningError
         """
         return self._private_key.sign(
             data,
