@@ -172,8 +172,8 @@ class PrivateKEK(BasePrivateKey):
         encryption_id = encrypted_data[:self.id_length]
         if encryption_id != self.key_id:
             raise exceptions.DecryptionError(
-                "Can't decrypt this data because it "
-                "was encrypted with key that has different id.")
+                "Can't decrypt this data. "
+                "Maybe it was encrypted with key that has different id.")
         key_version = encrypted_data[-1]
         if key_version != self.version:
             raise exceptions.DecryptionError(
