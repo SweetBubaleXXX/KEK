@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/pypi/l/gnukek)
 ![Status](https://img.shields.io/pypi/status/gnukek)
 [![Documentation Status](https://readthedocs.org/projects/gnukek/badge/?version=latest)](https://gnukek.readthedocs.io/en/latest/?badge=latest)
+[![Tests](https://github.com/SweetBubaleXXX/KEK/actions/workflows/python-package.yml/badge.svg)](https://github.com/SweetBubaleXXX/KEK/actions)
 
 Kinetic Encryption Key
 
