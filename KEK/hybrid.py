@@ -386,6 +386,10 @@ class PublicKEK(BasePublicKey):
         bytes
             Encrypted bytes.
             Length of encrypted bytes is the same as chunk's length.
+
+        Raises
+        ------
+        EncryptionError
         """
         symmetric_key = SymmetricKey.generate(self.symmetric_key_size)
         yield (self.version.to_bytes(1, "big") +
