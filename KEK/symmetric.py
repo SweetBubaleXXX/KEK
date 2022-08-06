@@ -1,3 +1,5 @@
+"""Module with symmetric key class."""
+
 from __future__ import annotations
 
 import os

@@ -1,6 +1,9 @@
+"""Module with hybrid key classes."""
+
 from __future__ import annotations
 
-from typing import Optional, Type
+from io import BufferedReader
+from typing import Generator, Optional, Type
 
 from cryptography.hazmat.primitives import hashes
 
@@ -23,6 +26,8 @@ class PrivateKEK(BasePrivateKey):
     version : int
         Version of key.
         Keys with different versions are incompatible.
+    version_length : int
+        Length of version bytes.
     id_length : int
         Length of id bytes.
     key_sizes : iterable
@@ -34,6 +39,7 @@ class PrivateKEK(BasePrivateKey):
     """
     algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
     version = int(__version__[0])
+    version_length = 1
     id_length = 8
     key_sizes = PrivateKey.key_sizes
     default_size = 4096
@@ -62,11 +68,51 @@ class PrivateKEK(BasePrivateKey):
         return self._key_id
 
     @property
+    def metadata_length(self) -> int:
+        """Length of metadata bytes.
+
+        Metadata consists of key version, key id and encrypted symmetric key.
+
+        """
+        return (self.version_length +
+                self.id_length +
+                self.key_size//8)
+
+    @property
     def public_key(self) -> PublicKEK:
         """Public KEK object for this Private KEK."""
         if not hasattr(self, "_public_key"):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
+
+    def __verify_version(self, encryption_key_version: bytes) -> None:
+        """Raise exception if key versions don't match."""
+        if int.from_bytes(encryption_key_version, "big") != self.version:
+            raise exceptions.DecryptionError(
+                "Can't decrypt this data. "
+                "Maybe it was encrypted with different version of key. "
+                f"Your key version - '{self.version}'. ")
+
+    def __verify_id(self, encryption_key_id: bytes) -> None:
+        """Raise exception if provided id doesn't match with current key id."""
+        if encryption_key_id != self.key_id:
+            raise exceptions.DecryptionError(
+                "Can't decrypt this data. "
+                "Maybe it was encrypted with key that has different id.")
+
+    def __decrypt_symmetric_key(self, encrypted_key: bytes) -> SymmetricKey:
+        """Create Symmetric Key object from encrypted bytes."""
+        decrypted_key = self._private_key.decrypt(encrypted_key)
+        symmetric_key_bytes = decrypted_key[:self.symmetric_key_size//8]
+        symmetric_key_iv = decrypted_key[self.symmetric_key_size//8:]
+        return SymmetricKey(symmetric_key_bytes, symmetric_key_iv)
+
+    def __decrypt_metadata(self, meta_bytes: bytes) -> SymmetricKey:
+        """Verify key metadata and return Symmetric Key object."""
+        self.__verify_version(meta_bytes[:self.version_length])
+        id_end_byte_position = self.version_length + self.id_length
+        self.__verify_id(meta_bytes[self.version_length:id_end_byte_position])
+        return self.__decrypt_symmetric_key(meta_bytes[id_end_byte_position:])
 
     @classmethod
     @raises(exceptions.KeyGenerationError)
@@ -169,28 +215,10 @@ class PrivateKEK(BasePrivateKey):
         ------
         DecryptionError
         """
-        encryption_id = encrypted_data[:self.id_length]
-        if encryption_id != self.key_id:
-            raise exceptions.DecryptionError(
-                "Can't decrypt this data. "
-                "Maybe it was encrypted with key that has different id.")
-        key_version = encrypted_data[-1]
-        if key_version != self.version:
-            raise exceptions.DecryptionError(
-                "Can't decrypt this data because it "
-                "was encrypted with different version of key. "
-                f"Your key version - '{self.version}'. "
-                f"Data is encrypted with version '{key_version}' of key.")
-        key_data_end_position = self.id_length + self.key_size // 8
-        encrypted_key_data = encrypted_data[
-            self.id_length:key_data_end_position
-        ]
-        symmetric_key_data = self._private_key.decrypt(encrypted_key_data)
-        symmetric_key_bytes = symmetric_key_data[:self.symmetric_key_size//8]
-        symmetric_key_iv = symmetric_key_data[self.symmetric_key_size//8:]
-        symmetric_key = SymmetricKey(symmetric_key_bytes, symmetric_key_iv)
+        symmetric_key = self.__decrypt_metadata(
+            encrypted_data[:self.metadata_length])
         return symmetric_key.decrypt(
-            encrypted_data[key_data_end_position:-1])
+            encrypted_data[self.metadata_length:])
 
     @raises(exceptions.SigningError)
     def sign(self, data: bytes) -> bytes:
@@ -277,6 +305,10 @@ class PublicKEK(BasePublicKey):
             self._key_id = digest.finalize()[:self.id_length]
         return self._key_id
 
+    def __encrypt_symmetric_key(self, symmetric_key: SymmetricKey) -> bytes:
+        """Encrypt Symmetric Key data using Public Key."""
+        return self._public_key.encrypt(symmetric_key.key+symmetric_key.iv)
+
     @classmethod
     @raises(exceptions.KeyLoadingError)
     def load(cls: Type[PublicKEK], serialized_key: bytes) -> PublicKEK:
@@ -331,12 +363,39 @@ class PublicKEK(BasePublicKey):
         """
         symmetric_key = SymmetricKey.generate(self.symmetric_key_size)
         encrypted_part = symmetric_key.encrypt(data)
-        encrypted_key_data = self._public_key.encrypt(
-            symmetric_key.key+symmetric_key.iv)
-        return (self.key_id +
+        encrypted_key_data = self.__encrypt_symmetric_key(symmetric_key)
+        return (self.version.to_bytes(1, "big") +
+                self.key_id +
                 encrypted_key_data +
-                encrypted_part +
-                self.version.to_bytes(1, "big"))
+                encrypted_part)
+
+    @raises(exceptions.EncryptionError)
+    def encrypt_chunks(self, file_object: BufferedReader,
+                       chunk_length: int = 1024) -> Generator:
+        """Chunk encryption generator.
+
+        Parameters
+        ----------
+        file_object : BufferedReader
+            File buffer.
+        chunk_length : int
+            Length (bytes) of chunk to encrypt.
+
+        Yields
+        ------
+        bytes
+            Encrypted bytes.
+            Length of encrypted bytes is the same as chunk's length.
+        """
+        symmetric_key = SymmetricKey.generate(self.symmetric_key_size)
+        yield (self.version.to_bytes(1, "big") +
+               self.key_id +
+               self.__encrypt_symmetric_key(symmetric_key))
+        while file_object:
+            chunk = file_object.read(chunk_length)
+            if not chunk:
+                break
+            yield symmetric_key.encrypt(chunk)
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:

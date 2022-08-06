@@ -1,3 +1,5 @@
+"""Module with abstract key classes."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
