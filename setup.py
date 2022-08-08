@@ -26,8 +26,8 @@ setup(name="gnukek",
           "Operating System :: OS Independent",
       ],
       packages=find_packages(include=["KEK"]),
-      package_data= {
-        "KEK": ["py.typed"]
+      package_data={
+          "KEK": ["py.typed"]
       },
       install_requires=[
           "cryptography>=35.0.0"

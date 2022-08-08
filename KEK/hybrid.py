@@ -198,6 +198,30 @@ class PrivateKEK(BasePrivateKey):
         """
         return self.public_key.encrypt(data)
 
+    @raises(exceptions.EncryptionError)
+    def encrypt_chunks(self, file_object: BufferedReader,
+                       chunk_length: int = 1024*1024) -> Generator:
+        """Chunk encryption generator.
+
+        Parameters
+        ----------
+        file_object : BufferedReader
+            File buffer.
+        chunk_length : int
+            Length (bytes) of chunk to encrypt.
+
+        Yields
+        ------
+        bytes
+            Encrypted bytes.
+            Length of encrypted bytes is the same as chunk's length.
+
+        Raises
+        ------
+        EncryptionError
+        """
+        return self.public_key.encrypt_chunks(file_object, chunk_length)
+
     @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
         """Decrypt byte data.
@@ -371,7 +395,7 @@ class PublicKEK(BasePublicKey):
 
     @raises(exceptions.EncryptionError)
     def encrypt_chunks(self, file_object: BufferedReader,
-                       chunk_length: int = 1024) -> Generator:
+                       chunk_length: int = 1024*1024) -> Generator:
         """Chunk encryption generator.
 
         Parameters
