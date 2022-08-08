@@ -88,8 +88,29 @@ class SymmetricKey(BaseSymmetricKey):
         return cls(key, iv)
 
     @raises(exceptions.EncryptionError)
+    def encrypt_raw(self, data: bytes) -> bytes:
+        """Encrypt byte data without adding padding.
+
+        Parameters
+        ----------
+        data : bytes
+            Byte data to encrypt.
+            Length of input bytes must be multiple of block's length.
+
+        Returns
+        -------
+        Encrypted bytes.
+
+        Raises
+        ------
+        EncryptionError
+        """
+        encryptor = self._cipher.encryptor()
+        return encryptor.update(data) + encryptor.finalize()
+
+    @raises(exceptions.EncryptionError)
     def encrypt(self, data: bytes) -> bytes:
-        """Encrypt byte data.
+        """Encrypt byte data with adding padding.
 
         Parameters
         ----------
@@ -105,13 +126,12 @@ class SymmetricKey(BaseSymmetricKey):
         EncryptionError
         """
         padder = PKCS7(self.block_size).padder()
-        encryptor = self._cipher.encryptor()
         padded_data = padder.update(data) + padder.finalize()
-        return encryptor.update(padded_data) + encryptor.finalize()
+        return self.encrypt_raw(padded_data)
 
     @raises(exceptions.DecryptionError)
-    def decrypt(self, encrypted_data: bytes) -> bytes:
-        """Decrypt byte data.
+    def decrypt_raw(self, encrypted_data: bytes) -> bytes:
+        """Decrypt byte data without unpadding it.
 
         Parameters
         ----------
@@ -126,8 +146,26 @@ class SymmetricKey(BaseSymmetricKey):
         ------
         DecryptionError
         """
-        unpadder = PKCS7(self.block_size).unpadder()
         decryptor = self._cipher.decryptor()
-        decrypted_data = decryptor.update(encrypted_data)
-        decrypted_data += decryptor.finalize()
+        return decryptor.update(encrypted_data) + decryptor.finalize()
+
+    @raises(exceptions.DecryptionError)
+    def decrypt(self, encrypted_data: bytes) -> bytes:
+        """Decrypt padded byte data.
+
+        Parameters
+        ----------
+        encrypted_data : bytes
+            Byte data (encrypted with padding) to decrypt.
+
+        Returns
+        -------
+        Decrypted bytes.
+
+        Raises
+        ------
+        DecryptionError
+        """
+        unpadder = PKCS7(self.block_size).unpadder()
+        decrypted_data = self.decrypt_raw(encrypted_data)
         return unpadder.update(decrypted_data) + unpadder.finalize()

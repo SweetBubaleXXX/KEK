@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from io import BufferedReader
 from typing import Generator, Optional, Type
 
@@ -199,8 +200,9 @@ class PrivateKEK(BasePrivateKey):
         return self.public_key.encrypt(data)
 
     @raises(exceptions.EncryptionError)
-    def encrypt_chunks(self, file_object: BufferedReader,
-                       chunk_length: int = 1024*1024) -> Generator:
+    def encrypt_chunks(
+            self, file_object: BufferedReader,
+            chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
         """Chunk encryption generator.
 
         Parameters
@@ -243,6 +245,43 @@ class PrivateKEK(BasePrivateKey):
             encrypted_data[:self.metadata_length])
         return symmetric_key.decrypt(
             encrypted_data[self.metadata_length:])
+
+    @raises(exceptions.DecryptionError)
+    def decrypt_chunks(
+            self, file_object: BufferedReader,
+            chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
+        """Chunk decryption generator.
+
+        Parameters
+        ----------
+        file_object : BufferedReader
+            File buffer.
+        chunk_length : int
+            Length (bytes) of chunk to encrypt.
+
+        Yields
+        ------
+        bytes
+            Decrypted bytes.
+            Length of decrypted bytes is the same as chunk's length.
+
+        Raises
+        ------
+        DecryptionError
+        """
+        file_object.seek(0, os.SEEK_END)
+        file_length = file_object.tell()
+        file_object.seek(0, os.SEEK_SET)
+        symmetric_key = self.__decrypt_metadata(
+            file_object.read(self.metadata_length))
+        while chunk_length:
+            chunk = file_object.read(chunk_length)
+            if not chunk:
+                break
+            if file_object.tell() == file_length:
+                yield symmetric_key.decrypt(chunk)
+            else:
+                yield symmetric_key.decrypt_raw(chunk)
 
     @raises(exceptions.SigningError)
     def sign(self, data: bytes) -> bytes:
@@ -394,8 +433,9 @@ class PublicKEK(BasePublicKey):
                 encrypted_part)
 
     @raises(exceptions.EncryptionError)
-    def encrypt_chunks(self, file_object: BufferedReader,
-                       chunk_length: int = 1024*1024) -> Generator:
+    def encrypt_chunks(
+            self, file_object: BufferedReader,
+            chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
         """Chunk encryption generator.
 
         Parameters
@@ -419,11 +459,13 @@ class PublicKEK(BasePublicKey):
         yield (self.version.to_bytes(1, "big") +
                self.key_id +
                self.__encrypt_symmetric_key(symmetric_key))
-        while file_object:
+        while chunk_length:
             chunk = file_object.read(chunk_length)
-            if not chunk:
+            if len(chunk) % (symmetric_key.block_size // 8) or len(chunk) == 0:
+                yield symmetric_key.encrypt(chunk)
                 break
-            yield symmetric_key.encrypt(chunk)
+            else:
+                yield symmetric_key.encrypt_raw(chunk)
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:
