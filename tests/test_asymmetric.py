@@ -1,33 +1,8 @@
 import unittest
+from io import BytesIO
 from typing import Type
 
-from KEK import asymmetric, base, hybrid, symmetric
-
-
-class TestSymmetricKey(unittest.TestCase):
-    def setUp(self):
-        self.key_size = symmetric.SymmetricKey.key_sizes[-1]
-        self.key = symmetric.SymmetricKey.generate(self.key_size)
-
-    def test_key_size_method(self):
-        self.assertEqual(self.key.key_size, self.key_size)
-
-    def test_encryption(self):
-        encrypted_data = self.key.encrypt(b"byte data")
-        self.assertIsInstance(encrypted_data, bytes)
-
-    def test_decryption(self):
-        data = b"byte data"
-        encrypted_data = self.key.encrypt(data)
-        decrypted_data = self.key.decrypt(encrypted_data)
-        self.assertEqual(decrypted_data, data)
-
-    def test_constructor(self):
-        key = self.key.key
-        iv = self.key.iv
-        new_key = symmetric.SymmetricKey(key, iv)
-        data = b"byte data"
-        self.assertEqual(self.key.encrypt(data), new_key.encrypt(data))
+from KEK import asymmetric, base, hybrid
 
 
 class TestAsymmetricKey(unittest.TestCase):
@@ -83,6 +58,30 @@ class TestHybridKey(TestAsymmetricKey):
         private_id = self.private_key.key_id
         public_id = self.private_key.public_key.key_id
         self.assertEqual(private_id, public_id)
+
+    def test_chunk_encryption(self):
+        block_length = self.private_key.block_size // 8
+        data = b"byte data" * block_length
+        input_stream = BytesIO(data)
+        output_stream = BytesIO()
+        for chunk in self.private_key.encrypt_chunks(input_stream,
+                                                     block_length):
+            output_stream.write(chunk)
+        encrypted_data = output_stream.getvalue()
+        entirely_decrypted = self.private_key.decrypt(encrypted_data)
+        self.assertEqual(entirely_decrypted, data)
+
+    def test_chunk_decryption(self):
+        block_length = self.private_key.block_size // 8
+        data = b"byte data" * block_length
+        entirely_encrypted = self.private_key.encrypt(data)
+        input_stream = BytesIO(entirely_encrypted)
+        output_stream = BytesIO()
+        for chunk in self.private_key.decrypt_chunks(input_stream,
+                                                     block_length):
+            output_stream.write(chunk)
+        decrypted_data = output_stream.getvalue()
+        self.assertEqual(decrypted_data, data)
 
 
 if __name__ == "__main__":

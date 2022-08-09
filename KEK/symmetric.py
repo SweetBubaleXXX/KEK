@@ -118,7 +118,8 @@ class SymmetricKey(BaseSymmetricKey):
 
         Returns
         -------
-        Symmetric Key object.
+        SymmetricKey
+            Symmetric Key object.
 
         Raises
         ------
@@ -139,7 +140,8 @@ class SymmetricKey(BaseSymmetricKey):
 
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted data.
 
         Raises
         ------
@@ -165,9 +167,11 @@ class SymmetricKey(BaseSymmetricKey):
         is_last : bool
             If True, adds padding to the last block of data, and
             the following call will use iv instead of previous block.
+
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted data.
 
         Raises
         ------
@@ -193,7 +197,8 @@ class SymmetricKey(BaseSymmetricKey):
 
         Returns
         -------
-        Decrypted bytes.
+        bytes
+            Decrypted data.
 
         Raises
         ------
@@ -223,7 +228,8 @@ class SymmetricKey(BaseSymmetricKey):
 
         Returns
         -------
-        Decrypted bytes.
+        bytes
+            Decrypted data.
 
         Raises
         ------

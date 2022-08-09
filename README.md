@@ -38,7 +38,7 @@ pip install gnukek
 
 ## Usage
 
-Import key objects:
+Import key classes:
 
 ```python
 from KEK.hybrid import PrivateKEK, PublicKEK
@@ -68,6 +68,14 @@ To decrypt data:
 
 ```python
 decrypted = private_key.decrypt(encrypted) # b"byte data"
+```
+
+Also supports chunk encryption/decryption:
+
+```python
+with open("file", "rb") as input_file, open("file.out", "wb") as output_file:
+    for chunk in private_key.encrypt_chunks(input_file, 1024):
+        output_file.write(chunk)
 ```
 
 To sign data:
@@ -109,15 +117,13 @@ loaded_private_key = PrivateKEK.load(serialized_key)
 
 ### Encrypted data consists of:
 
-  - [**Key id**](https://gnukek.readthedocs.io/en/latest/KEK.html#KEK.hybrid.PrivateKEK.key_id)
-
-  - **Encrypted symmetric key**
-
-  - **Data encrypted via symmetric key**
-
-  - [**Key version**](https://gnukek.readthedocs.io/en/latest/KEK.html#KEK.hybrid.PrivateKEK.version)
+| **Content** | **Length** |
+| ----------- | ---------- |
+| [Key version](https://gnukek.readthedocs.io/en/latest/KEK.html#KEK.hybrid.PrivateKEK.version) | *1 byte* |
+| [Key id](https://gnukek.readthedocs.io/en/latest/KEK.html#KEK.hybrid.PrivateKEK.key_id) | *8 bytes* |
+| Encrypted symmetric key | *Equal to key length (256-512 bytes)* |
+| Data encrypted via symmetric key | *Slightly larger than the length of original data and multiple of block length (<= len(original) + len(block))* |
 
 ## License
 
 [GPLv3 license](https://github.com/SweetBubaleXXX/KEK/blob/main/LICENSE)
-

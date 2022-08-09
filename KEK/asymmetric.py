@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Type
+from typing import Optional, Type, Union
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -14,6 +14,7 @@ from .exceptions import raises
 
 
 class PaddingMixin:
+    """Mixin with information about paddings and hashes."""
     encryption_padding = padding.OAEP(
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
         algorithm=hashes.SHA256(),
@@ -51,6 +52,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         private_key_object : cryptography.hazmat.primitives. ... .RSAPrivateKey
         """
         self._private_key = private_key_object
+        self._public_key: Union[PublicKey, None] = None
 
     @property
     def key_size(self) -> int:
@@ -60,7 +62,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
     @property
     def public_key(self) -> PublicKey:
         """Public Key object for this Private Key."""
-        if not hasattr(self, "_public_key"):
+        if not self._public_key:
             public_key_object = self._private_key.public_key()
             self._public_key = PublicKey(public_key_object)
         return self._public_key
@@ -78,7 +80,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        Private Key object.
+        PrivateKey
+            Private Key object.
 
         Raises
         ------
@@ -109,7 +112,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        Private Key object.
+        PrivateKey
+            Private Key object.
 
         Raises
         ------
@@ -134,7 +138,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        PEM encoded serialized Private Key.
+        bytes
+            PEM encoded serialized Private Key.
 
         Raises
         ------
@@ -162,7 +167,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted data.
 
         Raises
         ------
@@ -181,7 +187,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        Decrypted bytes.
+        bytes
+            Decrypted data.
 
         Raises
         ------
@@ -203,7 +210,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        Singed byte data.
+        bytes
+            Singed byte data.
 
         Raises
         ------
@@ -228,7 +236,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
         Returns
         -------
-        True if signature matches, otherwise False.
+        bool
+            True if signature matches, otherwise False.
 
         Raises
         ------
@@ -274,7 +283,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
         Returns
         -------
-        Public Key object.
+        PublicKey
+            Public Key object.
 
         Raises
         ------
@@ -291,7 +301,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
         Returns
         -------
-        PEM encoded serialized Public Key.
+        bytes
+            PEM encoded serialized Public Key.
 
         Raises
         ------
@@ -313,7 +324,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted data.
 
         Raises
         ------
@@ -337,7 +349,8 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
         Returns
         -------
-        True if signature matches, otherwise False.
+        bool
+            True if signature matches, otherwise False.
 
         Raises
         ------

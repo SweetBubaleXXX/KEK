@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from io import BufferedReader
-from typing import Generator, Optional, Type
+from io import BufferedIOBase
+from typing import Generator, Optional, Type, Union
 
 from cryptography.hazmat.primitives import hashes
 
@@ -37,6 +37,8 @@ class PrivateKEK(BasePrivateKey):
         Default key size.
     symmetric_key_size : int
         Size (in bits) of Symmetric Key used for encryption.
+    block_size : int
+        Encryption block size in bits.
     """
     algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
     version = int(__version__[0])
@@ -45,6 +47,7 @@ class PrivateKEK(BasePrivateKey):
     key_sizes = PrivateKey.key_sizes
     default_size = 4096
     symmetric_key_size = 256
+    block_size = SymmetricKey.block_size
 
     def __init__(self, private_key_object: PrivateKey) -> None:
         """
@@ -53,6 +56,8 @@ class PrivateKEK(BasePrivateKey):
         private_key_object : PrivateKey
         """
         self._private_key = private_key_object
+        self._public_key: Union[PublicKEK, None] = None
+        self._key_id: Union[bytes, None] = None
 
     @property
     def key_size(self) -> int:
@@ -62,7 +67,7 @@ class PrivateKEK(BasePrivateKey):
     @property
     def key_id(self) -> bytes:
         """Id bytes for this key (key pair)."""
-        if not hasattr(self, "_key_id"):
+        if not self._key_id:
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._private_key.public_key.serialize())
             self._key_id = digest.finalize()[:self.id_length]
@@ -82,7 +87,7 @@ class PrivateKEK(BasePrivateKey):
     @property
     def public_key(self) -> PublicKEK:
         """Public KEK object for this Private KEK."""
-        if not hasattr(self, "_public_key"):
+        if not self._public_key:
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
 
@@ -128,7 +133,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        Private KEK object.
+        PrivateKEK
+            Private KEK object.
 
         Raises
         ------
@@ -152,7 +158,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        Private KEK object.
+        PrivateKEK
+            Private KEK object.
 
         Raises
         ------
@@ -172,7 +179,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        PEM encoded serialized Private KEK.
+        bytes
+            PEM encoded serialized Private KEK.
 
         Raises
         ------
@@ -191,7 +199,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted data.
 
         Raises
         ------
@@ -201,14 +210,15 @@ class PrivateKEK(BasePrivateKey):
 
     @raises(exceptions.EncryptionError)
     def encrypt_chunks(
-            self, file_object: BufferedReader,
+            self, binary_stream: BufferedIOBase,
             chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
         """Chunk encryption generator.
 
         Parameters
         ----------
-        file_object : BufferedReader
-            File buffer.
+        binary_stream : BufferedIOBase
+            Buffered binary stream.
+            Could be either io.BufferedReader or io.BytesIO.
         chunk_length : int
             Length (bytes) of chunk to encrypt.
 
@@ -222,7 +232,7 @@ class PrivateKEK(BasePrivateKey):
         ------
         EncryptionError
         """
-        return self.public_key.encrypt_chunks(file_object, chunk_length)
+        return self.public_key.encrypt_chunks(binary_stream, chunk_length)
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, encrypted_data: bytes) -> bytes:
@@ -235,7 +245,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        Decrypted bytes.
+        bytes
+            Decrypted data.
 
         Raises
         ------
@@ -248,37 +259,38 @@ class PrivateKEK(BasePrivateKey):
 
     @raises(exceptions.DecryptionError)
     def decrypt_chunks(
-            self, file_object: BufferedReader,
+            self, binary_stream: BufferedIOBase,
             chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
         """Chunk decryption generator.
 
         Parameters
         ----------
-        file_object : BufferedReader
-            File buffer.
+        binary_stream : BufferedIOBase
+            Buffered binary stream.
+            Could be either io.BufferedReader or io.BytesIO.
         chunk_length : int
             Length (bytes) of chunk to encrypt.
 
         Yields
         ------
         bytes
-            Decrypted bytes.
+            Decrypted data.
             Length of decrypted bytes is the same as chunk's length.
 
         Raises
         ------
         DecryptionError
         """
-        file_object.seek(0, os.SEEK_END)
-        file_length = file_object.tell()
-        file_object.seek(0, os.SEEK_SET)
+        binary_stream.seek(0, os.SEEK_END)
+        stream_length = binary_stream.tell()
+        binary_stream.seek(0, os.SEEK_SET)
         symmetric_key = self.__decrypt_metadata(
-            file_object.read(self.metadata_length))
+            binary_stream.read(self.metadata_length))
         while chunk_length:
-            chunk = file_object.read(chunk_length)
+            chunk = binary_stream.read(chunk_length)
             if not chunk:
                 break
-            is_last = file_object.tell() == file_length
+            is_last = binary_stream.tell() == stream_length
             yield symmetric_key.decrypt_chunk(chunk, is_last)
 
     @raises(exceptions.SigningError)
@@ -292,7 +304,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        Singed byte data.
+        bytes
+            Singed byte data.
 
         Raises
         ------
@@ -313,7 +326,8 @@ class PrivateKEK(BasePrivateKey):
 
         Returns
         -------
-        True if signature matches, otherwise False.
+        bool
+            True if signature matches, otherwise False.
 
         Raises
         ------
@@ -334,15 +348,21 @@ class PublicKEK(BasePublicKey):
     version : int
         Version of key.
         Keys with different versions are incompatible.
+    version_length : int
+        Length of version bytes.
     id_length : int
         Length of id bytes.
     symmetric_key_size : int
         Size (in bits) of Symmetric Key used for encryption.
+    block_size : int
+        Encryption block size in bits.
     """
     algorithm = PrivateKEK.algorithm
     version = PrivateKEK.version
+    version_length = PrivateKEK.version_length
     id_length = PrivateKEK.id_length
     symmetric_key_size = PrivateKEK.symmetric_key_size
+    block_size = PrivateKEK.block_size
 
     def __init__(self, public_key_object: PublicKey) -> None:
         """
@@ -351,6 +371,7 @@ class PublicKEK(BasePublicKey):
         public_key_object : PublicKey
         """
         self._public_key = public_key_object
+        self._key_id: Union[bytes, None] = None
 
     @property
     def key_size(self) -> int:
@@ -360,7 +381,7 @@ class PublicKEK(BasePublicKey):
     @property
     def key_id(self) -> bytes:
         """Id bytes for this key (key pair)."""
-        if not hasattr(self, "_key_id"):
+        if not self._key_id:
             digest = hashes.Hash(hashes.SHA256())
             digest.update(self._public_key.serialize())
             self._key_id = digest.finalize()[:self.id_length]
@@ -382,7 +403,8 @@ class PublicKEK(BasePublicKey):
 
         Returns
         -------
-        Public KEK object.
+        PublicKEK
+            Public KEK object.
 
         Raises
         ------
@@ -397,7 +419,8 @@ class PublicKEK(BasePublicKey):
 
         Returns
         -------
-        PEM encoded serialized Public KEK.
+        bytes
+            PEM encoded serialized Public KEK.
 
         Raises
         ------
@@ -416,7 +439,8 @@ class PublicKEK(BasePublicKey):
 
         Returns
         -------
-        Encrypted bytes.
+        bytes
+            Encrypted bytes.
 
         Raises
         ------
@@ -432,14 +456,15 @@ class PublicKEK(BasePublicKey):
 
     @raises(exceptions.EncryptionError)
     def encrypt_chunks(
-            self, file_object: BufferedReader,
+            self, binary_stream: BufferedIOBase,
             chunk_length: int = 1024*1024) -> Generator[bytes, None, None]:
         """Chunk encryption generator.
 
         Parameters
         ----------
-        file_object : BufferedReader
-            File buffer.
+        binary_stream : BufferedIOBase
+            Buffered binary stream.
+            Could be either io.BufferedReader or io.BytesIO.
         chunk_length : int
             Length (bytes) of chunk to encrypt.
 
@@ -458,7 +483,7 @@ class PublicKEK(BasePublicKey):
                self.key_id +
                self.__encrypt_symmetric_key(symmetric_key))
         while chunk_length:
-            chunk = file_object.read(chunk_length)
+            chunk = binary_stream.read(chunk_length)
             is_last = (len(chunk) == 0
                        or len(chunk) % (symmetric_key.block_size // 8) > 0)
             yield symmetric_key.encrypt_chunk(chunk, is_last)
@@ -478,7 +503,8 @@ class PublicKEK(BasePublicKey):
 
         Returns
         -------
-        True if signature matches, otherwise False.
+        bool
+            True if signature matches, otherwise False.
 
         Raises
         ------

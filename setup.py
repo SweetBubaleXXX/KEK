@@ -35,7 +35,9 @@ setup(name="gnukek",
       extras_require={
           "dev": [
               "mypy",
-              "pycodestyle"
+              "pycodestyle",
+              "pylint",
+              "pytest"
           ],
           "build": [
               "build",
