@@ -278,10 +278,8 @@ class PrivateKEK(BasePrivateKey):
             chunk = file_object.read(chunk_length)
             if not chunk:
                 break
-            if file_object.tell() == file_length:
-                yield symmetric_key.decrypt(chunk)
-            else:
-                yield symmetric_key.decrypt_raw(chunk)
+            is_last = file_object.tell() == file_length
+            yield symmetric_key.decrypt_chunk(chunk, is_last)
 
     @raises(exceptions.SigningError)
     def sign(self, data: bytes) -> bytes:
@@ -461,11 +459,11 @@ class PublicKEK(BasePublicKey):
                self.__encrypt_symmetric_key(symmetric_key))
         while chunk_length:
             chunk = file_object.read(chunk_length)
-            if len(chunk) % (symmetric_key.block_size // 8) or len(chunk) == 0:
-                yield symmetric_key.encrypt(chunk)
+            is_last = (len(chunk) == 0
+                       or len(chunk) % (symmetric_key.block_size // 8) > 0)
+            yield symmetric_key.encrypt_chunk(chunk, is_last)
+            if is_last:
                 break
-            else:
-                yield symmetric_key.encrypt_raw(chunk)
 
     @raises(exceptions.VerificationError)
     def verify(self, signature: bytes, data: bytes) -> bool:

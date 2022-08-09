@@ -179,7 +179,7 @@ class SymmetricKey(BaseSymmetricKey):
         if is_last:
             self._prev_encryption_block = None
         else:
-            self._prev_encryption_block = encrypted_data[self.block_size//8:]
+            self._prev_encryption_block = encrypted_data[-self.block_size//8:]
         return encrypted_data
 
     @raises(exceptions.DecryptionError)
@@ -236,5 +236,5 @@ class SymmetricKey(BaseSymmetricKey):
         if is_last:
             self._prev_decryption_block = None
             return self.__remove_padding(decrypted_data)
-        self._prev_decryption_block = decrypted_data[self.block_size//8:]
+        self._prev_decryption_block = encrypted_data[-self.block_size//8:]
         return decrypted_data
