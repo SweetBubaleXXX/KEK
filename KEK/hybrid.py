@@ -91,16 +91,27 @@ class PrivateKEK(BasePrivateKey):
             self._public_key = PublicKEK(self._private_key.public_key)
         return self._public_key
 
-    def __verify_version(self, encryption_key_version: bytes) -> None:
-        """Raise exception if key versions don't match."""
+    def __get_key_version(self, meta_bytes: bytes) -> bytes:
+        """Get key version from provided metadata."""
+        return meta_bytes[:self.version_length]
+
+    def __get_key_id(self, meta_bytes: bytes) -> bytes:
+        """Get key id from provided metadata."""
+        id_end_byte_position = self.version_length + self.id_length
+        return meta_bytes[self.version_length:id_end_byte_position]
+
+    def __verify_version(self, meta_bytes: bytes) -> None:
+        """Raise exception if version in metadata doesn't match the current."""
+        encryption_key_version = self.__get_key_version(meta_bytes)
         if int.from_bytes(encryption_key_version, "big") != self.version:
             raise exceptions.DecryptionError(
                 "Can't decrypt this data. "
                 "Maybe it was encrypted with different version of key. "
                 f"Your key version - '{self.version}'. ")
 
-    def __verify_id(self, encryption_key_id: bytes) -> None:
-        """Raise exception if provided id doesn't match with current key id."""
+    def __verify_id(self, meta_bytes: bytes) -> None:
+        """Raise exception if id in metadata doesn't match the current id."""
+        encryption_key_id = self.__get_key_id(meta_bytes)
         if encryption_key_id != self.key_id:
             raise exceptions.DecryptionError(
                 "Can't decrypt this data. "
@@ -115,10 +126,10 @@ class PrivateKEK(BasePrivateKey):
 
     def __decrypt_metadata(self, meta_bytes: bytes) -> SymmetricKey:
         """Verify key metadata and return Symmetric Key object."""
-        self.__verify_version(meta_bytes[:self.version_length])
-        id_end_byte_position = self.version_length + self.id_length
-        self.__verify_id(meta_bytes[self.version_length:id_end_byte_position])
-        return self.__decrypt_symmetric_key(meta_bytes[id_end_byte_position:])
+        self.__verify_version(meta_bytes)
+        self.__verify_id(meta_bytes)
+        key_beginning_byte = self.version_length + self.id_length
+        return self.__decrypt_symmetric_key(meta_bytes[key_beginning_byte:])
 
     @staticmethod
     def is_encrypted(serialized_key: bytes) -> bool:
