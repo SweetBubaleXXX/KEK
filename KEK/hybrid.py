@@ -120,6 +120,22 @@ class PrivateKEK(BasePrivateKey):
         self.__verify_id(meta_bytes[self.version_length:id_end_byte_position])
         return self.__decrypt_symmetric_key(meta_bytes[id_end_byte_position:])
 
+    @staticmethod
+    def is_encrypted(serialized_key: bytes) -> bool:
+        """Check if serialized key is encrypted.
+
+        Parameters
+        ----------
+        serialized_key : bytes
+            Encoded key.
+
+        Returns
+        -------
+        bool
+            True if serialized key is encrypted.
+        """
+        return PrivateKey.is_encrypted(serialized_key)
+
     @classmethod
     @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKEK],

@@ -62,6 +62,11 @@ class BasePrivateKey(ABC):
     def public_key(self) -> BasePublicKey:
         pass
 
+    @staticmethod
+    @abstractmethod
+    def is_encrypted(serialized_key: bytes) -> bool:
+        pass
+
     @classmethod
     @abstractmethod
     def generate(cls: Type[BasePrivateKey], key_size: int) -> BasePrivateKey:

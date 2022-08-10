@@ -67,6 +67,23 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             self._public_key = PublicKey(public_key_object)
         return self._public_key
 
+    @staticmethod
+    def is_encrypted(serialized_key: bytes) -> bool:
+        """Check if serialized key is encrypted.
+
+        Parameters
+        ----------
+        serialized_key : bytes
+            Encoded key.
+
+        Returns
+        -------
+        bool
+            True if serialized key is encrypted.
+        """
+        lines = serialized_key.splitlines()
+        return bool(lines and b"ENCRYPTED" in lines[0])
+
     @classmethod
     @raises(exceptions.KeyGenerationError)
     def generate(cls: Type[PrivateKey],
