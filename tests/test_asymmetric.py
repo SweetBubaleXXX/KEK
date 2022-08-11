@@ -26,10 +26,20 @@ class TestAsymmetricKey(unittest.TestCase):
         self.assertIsInstance(loaded_key, self.private_key_class)
 
     def test_public_key_serialization(self):
-        public_ley = self.private_key.public_key
-        serialized_data = public_ley.serialize()
+        public_key = self.private_key.public_key
+        serialized_data = public_key.serialize()
         loaded_key = self.public_key_class.load(serialized_data)
         self.assertIsInstance(loaded_key, self.public_key_class)
+
+    def test_private_key_first_line_attr(self):
+        serialized_data = self.private_key.serialize()
+        first_line = serialized_data.splitlines()[0]
+        self.assertEqual(first_line, self.private_key_class.first_line)
+
+    def test_public_key_first_line_attr(self):
+        serialized_data = self.private_key.public_key.serialize()
+        first_line = serialized_data.splitlines()[0]
+        self.assertEqual(first_line, self.public_key_class.first_line)
 
     def test_is_encrypted_method(self):
         encrypted_serialized_data = self.private_key.serialize(b"password")
