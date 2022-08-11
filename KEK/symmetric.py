@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES
@@ -67,16 +67,13 @@ class SymmetricKey(BaseSymmetricKey):
         return self._iv
 
     def __create_cipher(self, key: bytes, iv: bytes) -> Cipher:
-        """Create Cipher object."""
         return Cipher(AES(key), modes.CBC(iv))
 
     def __add_padding(self, data: bytes) -> bytes:
-        """Add padding to byte data with uncertain length."""
         padder = PKCS7(self.block_size).padder()
         return padder.update(data) + padder.finalize()
 
     def __remove_padding(self, padded_data: bytes) -> bytes:
-        """Return unpadded byte data."""
         unpadder = PKCS7(self.block_size).unpadder()
         return unpadder.update(padded_data) + unpadder.finalize()
 
@@ -108,7 +105,7 @@ class SymmetricKey(BaseSymmetricKey):
 
     @classmethod
     @raises(exceptions.KeyGenerationError)
-    def generate(cls: Type[SymmetricKey], key_size: int = 256) -> SymmetricKey:
+    def generate(cls, key_size: int = 256) -> SymmetricKey:
         """Generate Symmetric Key with set key size.
 
         Parameters

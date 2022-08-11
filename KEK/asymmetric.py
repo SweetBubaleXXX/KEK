@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -38,12 +38,18 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         Available sizes (in bits) for key.
     default_size : int
         Default key size in bits.
+    first_line : bytes
+        First line of unencrypted serialized key.
+    encrypted_first_line : bytes
+        First line of encrypted serialized key.
     """
     algorithm = "RSA"
     encoding = serialization.Encoding.PEM
     format = serialization.PrivateFormat.PKCS8
     key_sizes = (2048, 3072, 4096)
     default_size = 2048
+    first_line = b"-----BEGIN PRIVATE KEY-----"
+    encrypted_first_line = b"-----BEGIN ENCRYPTED PRIVATE KEY-----"
 
     def __init__(self, private_key_object: rsa.RSAPrivateKey) -> None:
         """
@@ -67,8 +73,8 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
             self._public_key = PublicKey(public_key_object)
         return self._public_key
 
-    @staticmethod
-    def is_encrypted(serialized_key: bytes) -> bool:
+    @classmethod
+    def is_encrypted(cls, serialized_key: bytes) -> bool:
         """Check if serialized key is encrypted.
 
         Parameters
@@ -81,13 +87,12 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
         bool
             True if serialized key is encrypted.
         """
-        lines = serialized_key.splitlines()
-        return bool(lines and b"ENCRYPTED" in lines[0])
+        lines = serialized_key.strip().splitlines()
+        return lines[0] == cls.encrypted_first_line
 
     @classmethod
     @raises(exceptions.KeyGenerationError)
-    def generate(cls: Type[PrivateKey],
-                 key_size: Optional[int] = None) -> PrivateKey:
+    def generate(cls, key_size: Optional[int] = None) -> PrivateKey:
         """Generate Private Key with set key size.
 
         Parameters
@@ -116,7 +121,7 @@ class PrivateKey(BasePrivateKey, PaddingMixin):
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls: Type[PrivateKey], serialized_key: bytes,
+    def load(cls, serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKey:
         """Load Private Key from PEM encoded serialized byte data.
 
@@ -270,10 +275,13 @@ class PublicKey(BasePublicKey, PaddingMixin):
     ----------
     algorthm : str
         Name of encryption algorithm.
+    first_line : bytes
+        First line of serialized key.
     """
     algorithm = PrivateKey.algorithm
     encoding = PrivateKey.encoding
     format = serialization.PublicFormat.SubjectPublicKeyInfo
+    first_line = b"-----BEGIN PUBLIC KEY-----"
 
     def __init__(self, public_key_object: rsa.RSAPublicKey) -> None:
         """
@@ -290,7 +298,7 @@ class PublicKey(BasePublicKey, PaddingMixin):
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls: Type[PublicKey], serialized_key: bytes) -> PublicKey:
+    def load(cls, serialized_key: bytes) -> PublicKey:
         """Load Public Key from PEM encoded serialized byte data.
 
         Parameters

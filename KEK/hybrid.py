@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from io import BufferedIOBase
-from typing import Generator, Optional, Type, Union
+from typing import Generator, Optional, Union
 
 from cryptography.hazmat.primitives import hashes
 
@@ -39,6 +39,10 @@ class PrivateKEK(BasePrivateKey):
         Size (in bits) of Symmetric Key used for encryption.
     block_size : int
         Encryption block size in bits.
+    first_line : bytes
+        First line of unencrypted serialized key.
+    encrypted_first_line : bytes
+        First line of encrypted serialized key.
     """
     algorithm = f"{PrivateKey.algorithm}+{SymmetricKey.algorithm}"
     version = int(__version__[0])
@@ -48,6 +52,8 @@ class PrivateKEK(BasePrivateKey):
     default_size = 4096
     symmetric_key_size = 256
     block_size = SymmetricKey.block_size
+    first_line = PrivateKey.first_line
+    encrypted_first_line = PrivateKey.encrypted_first_line
 
     def __init__(self, private_key_object: PrivateKey) -> None:
         """
@@ -92,16 +98,13 @@ class PrivateKEK(BasePrivateKey):
         return self._public_key
 
     def __get_key_version(self, meta_bytes: bytes) -> bytes:
-        """Get key version from provided metadata."""
         return meta_bytes[:self.version_length]
 
     def __get_key_id(self, meta_bytes: bytes) -> bytes:
-        """Get key id from provided metadata."""
         id_end_byte_position = self.version_length + self.id_length
         return meta_bytes[self.version_length:id_end_byte_position]
 
     def __verify_version(self, meta_bytes: bytes) -> None:
-        """Raise exception if version in metadata doesn't match the current."""
         encryption_key_version = self.__get_key_version(meta_bytes)
         if int.from_bytes(encryption_key_version, "big") != self.version:
             raise exceptions.DecryptionError(
@@ -110,7 +113,6 @@ class PrivateKEK(BasePrivateKey):
                 f"Your key version - '{self.version}'. ")
 
     def __verify_id(self, meta_bytes: bytes) -> None:
-        """Raise exception if id in metadata doesn't match the current id."""
         encryption_key_id = self.__get_key_id(meta_bytes)
         if encryption_key_id != self.key_id:
             raise exceptions.DecryptionError(
@@ -118,14 +120,12 @@ class PrivateKEK(BasePrivateKey):
                 "Maybe it was encrypted with key that has different id.")
 
     def __decrypt_symmetric_key(self, encrypted_key: bytes) -> SymmetricKey:
-        """Create Symmetric Key object from encrypted bytes."""
         decrypted_key = self._private_key.decrypt(encrypted_key)
         symmetric_key_bytes = decrypted_key[:self.symmetric_key_size//8]
         symmetric_key_iv = decrypted_key[self.symmetric_key_size//8:]
         return SymmetricKey(symmetric_key_bytes, symmetric_key_iv)
 
     def __decrypt_metadata(self, meta_bytes: bytes) -> SymmetricKey:
-        """Verify key metadata and return Symmetric Key object."""
         self.__verify_version(meta_bytes)
         self.__verify_id(meta_bytes)
         key_beginning_byte = self.version_length + self.id_length
@@ -149,8 +149,7 @@ class PrivateKEK(BasePrivateKey):
 
     @classmethod
     @raises(exceptions.KeyGenerationError)
-    def generate(cls: Type[PrivateKEK],
-                 key_size: Optional[int] = None) -> PrivateKEK:
+    def generate(cls, key_size: Optional[int] = None) -> PrivateKEK:
         """Generate Private KEK with set key size.
 
         Parameters
@@ -172,7 +171,7 @@ class PrivateKEK(BasePrivateKey):
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls: Type[PrivateKEK], serialized_key: bytes,
+    def load(cls, serialized_key: bytes,
              password: Optional[bytes] = None) -> PrivateKEK:
         """Load Private KEK from PEM encoded serialized byte data.
 
@@ -383,6 +382,8 @@ class PublicKEK(BasePublicKey):
         Size (in bits) of Symmetric Key used for encryption.
     block_size : int
         Encryption block size in bits.
+    first_line : bytes
+        First line of serialized key.
     """
     algorithm = PrivateKEK.algorithm
     version = PrivateKEK.version
@@ -390,6 +391,7 @@ class PublicKEK(BasePublicKey):
     id_length = PrivateKEK.id_length
     symmetric_key_size = PrivateKEK.symmetric_key_size
     block_size = PrivateKEK.block_size
+    first_line = PublicKey.first_line
 
     def __init__(self, public_key_object: PublicKey) -> None:
         """
@@ -420,7 +422,7 @@ class PublicKEK(BasePublicKey):
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls: Type[PublicKEK], serialized_key: bytes) -> PublicKEK:
+    def load(cls, serialized_key: bytes) -> PublicKEK:
         """Load Public KEK from PEM encoded serialized byte data.
 
         Parameters
