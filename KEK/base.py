@@ -8,7 +8,7 @@ from typing import Iterable, Optional, Type
 
 class BaseSymmetricKey(ABC):
     algorithm: str
-    key_sizes: Iterable
+    key_sizes: Iterable[int]
 
     @abstractmethod
     def __init__(self, key: bytes, iv: bytes) -> None:
@@ -46,7 +46,8 @@ class BaseSymmetricKey(ABC):
 
 class BasePrivateKey(ABC):
     algorithm: str
-    key_sizes: Iterable
+    key_sizes: Iterable[int]
+    default_size: int
 
     @abstractmethod
     def __init__(self, private_key_object: object) -> None:
