@@ -19,7 +19,7 @@ setup(name="gnukek",
           "Bug Tracker": "https://github.com/SweetBubaleXXX/KEK/issues",
       },
       classifiers=[
-          "Development Status :: 4 - Beta",
+          "Development Status :: 5 - Production/Stable",
           "Topic :: Security :: Cryptography",
           "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
           "Programming Language :: Python :: 3",
