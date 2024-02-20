@@ -91,6 +91,10 @@ class KeyPair:
         self._public_key = PublicKey(private_key.public_key())
 
     @property
+    def key_size(self) -> int:
+        return self._rsa_private_key.key_size
+
+    @property
     def public_key(self) -> PublicKey:
         return self._public_key
 

@@ -4,8 +4,6 @@ from typing import Awaitable, Callable, ParamSpec, Type, TypeVar
 T = TypeVar("T")
 P = ParamSpec("P")
 
-InnerFunc = Callable[P, T]
-
 
 class KekException(Exception):
     pass
