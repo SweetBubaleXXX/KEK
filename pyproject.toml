@@ -1,0 +1,23 @@
+[tool.isort]
+profile = "black"
+
+
+[tool.poetry]
+name = "gnukek"
+version = "2.0.0a0"
+description = "Kinetic Encryption Key"
+authors = ["SweetBubaleXXX <70811772+SweetBubaleXXX@users.noreply.github.com>"]
+license = "GPL-3.0-only"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+cryptography = ">=40,<43"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

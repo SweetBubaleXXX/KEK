@@ -1,63 +1,65 @@
-"""Module with exception classes."""
-
 from functools import wraps
-from typing import Callable, Type
+from typing import Awaitable, Callable, ParamSpec, Type, TypeVar
 
-BASE_ERROR_MESSAGE = "Exception occurred while {}."
+T = TypeVar("T")
+P = ParamSpec("P")
 
-
-class KeyGenerationError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "generating key")) -> None:
-        super().__init__(message)
+InnerFunc = Callable[P, T]
 
 
-class KeyLoadingError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "loading key")) -> None:
-        super().__init__(message)
+class KekException(Exception):
+    pass
 
 
-class KeySerializationError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "serializing key")) -> None:
-        super().__init__(message)
+class KeyGenerationError(KekException):
+    def __init__(self, message: str = "Failed to generate key", *args: object) -> None:
+        super().__init__(message, *args)
 
 
-class EncryptionError(Exception):
-    def __init__(self,
-                 message: str = BASE_ERROR_MESSAGE.format(
-            "encrypting data")) -> None:
-        super().__init__(message)
+class KeyLoadingError(KekException):
+    def __init__(self, message: str = "Failed to load key", *args: object) -> None:
+        super().__init__(message, *args)
 
 
-class DecryptionError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "decrypting data")) -> None:
-        super().__init__(message)
-
-
-class SigningError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "signing data")) -> None:
-        super().__init__(message)
-
-
-class VerificationError(Exception):
-    def __init__(self, message: str = BASE_ERROR_MESSAGE.format(
-            "verifying data")) -> None:
-        super().__init__(message)
-
-
-def raises(exception: Type[Exception]) -> Callable:
-    def decorator(func: Callable) -> Callable:
+def raises(
+    exception_type: Type[Exception],
+    *exc_args,
+    **exc_kwargs,
+) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             try:
                 return func(*args, **kwargs)
-            except exception:
-                raise
-            except Exception as e:
-                raise exception(e) from e
+            except KekException as exc:
+                if isinstance(exc, exception_type):
+                    raise
+                raise exception_type(*exc_args, **exc_kwargs) from exc
+            except Exception as exc:
+                raise exception_type(*exc_args, **exc_kwargs) from exc
+
         return wrapper
+
+    return decorator
+
+
+def async_raises(
+    exception_type: Type[Exception],
+    *exc_args,
+    **exc_kwargs,
+) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
+    def decorator(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+        @wraps(func)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return await func(*args, **kwargs)
+            except KekException as exc:
+                if isinstance(exc, exception_type):
+                    raise
+                raise exception_type(*exc_args, **exc_kwargs) from exc
+            except Exception as exc:
+                raise exception_type(*exc_args, **exc_kwargs) from exc
+
+        return wrapper
+
     return decorator
