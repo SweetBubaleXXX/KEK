@@ -1,3 +1,4 @@
+from functools import cached_property
 from io import BufferedIOBase
 from typing import AsyncIterable, Iterable, Self
 
@@ -13,12 +14,26 @@ class PublicKey:
     def __init__(self, key: rsa.RSAPublicKey) -> None:
         self._key = key
 
+    @cached_property
+    def key_id(self) -> bytes:
+        hasher = hashes.Hash(constants.KEY_ID_HASH_ALGORITHM)
+        serialized_key = self.serialize()
+        hasher.update(serialized_key)
+        digest = hasher.finalize()
+        return digest[: constants.KEY_ID_LENGTH]
+
     @classmethod
     def load(cls, serialized_key: bytes) -> Self:
         public_key = serialization.load_pem_public_key(serialized_key)
         if not isinstance(public_key, rsa.RSAPublicKey):
             raise
         return cls(public_key)
+
+    def serialize(self) -> bytes:
+        return self._key.public_bytes(
+            constants.KEY_SERIALIZATION_ENCODING,
+            constants.PUBLIC_KEY_FORMAT,
+        )
 
     def verify(self, signature: bytes, message: bytes) -> bool:
         return self._signature_is_valid(signature, message)
@@ -98,10 +113,14 @@ class KeyPair:
     def public_key(self) -> PublicKey:
         return self._public_key
 
+    @property
+    def key_id(self) -> bytes:
+        return self._public_key.key_id
+
     @classmethod
     @raises(exceptions.KeyGenerationError)
-    def generate(cls, key_size: constants.KEY_SIZE = 2048) -> Self:
-        if key_size not in constants.KEY_SIZES:
+    def generate(cls, key_size: constants.KEY_SIZE) -> Self:
+        if key_size not in constants.SUPPORTED_KEY_SIZES:
             raise ValueError("Invalid key size")
         rsa_private_key = rsa.generate_private_key(
             constants.RSA_PUBLIC_EXPONENT,
@@ -116,3 +135,15 @@ class KeyPair:
         if not isinstance(private_key, rsa.RSAPrivateKey):
             raise exceptions.KeyLoadingError("Not RSA private key")
         return cls(private_key)
+
+    @raises(exceptions.KeySerializationError)
+    def serialize(self, password: bytes | None = None) -> bytes:
+        if password:
+            encryption_algorithm = serialization.BestAvailableEncryption(password)
+        else:
+            encryption_algorithm = serialization.NoEncryption()
+        return self._rsa_private_key.private_bytes(
+            encoding=constants.KEY_SERIALIZATION_ENCODING,
+            format=constants.PRIVATE_KEY_FORMAT,
+            encryption_algorithm=encryption_algorithm,
+        )

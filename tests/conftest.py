@@ -1,5 +1,7 @@
 import pytest
 
+from kek import KeyPair
+
 from . import constants
 
 
@@ -31,3 +33,8 @@ def serialized_public_key():
 @pytest.fixture
 def encrypted_private_key():
     return constants.ENCRYPTED_PRIVATE_KEY
+
+
+@pytest.fixture
+def key_pair(serialized_private_key: bytes):
+    return KeyPair.load(serialized_private_key)

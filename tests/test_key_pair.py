@@ -1,6 +1,7 @@
 import pytest
 
 from kek import KeyPair, exceptions
+from kek.constants import SUPPORTED_KEY_SIZES
 
 
 def test_load_key(serialized_private_key: bytes, key_size: int):
@@ -11,10 +12,9 @@ def test_load_key(serialized_private_key: bytes, key_size: int):
 
 def test_load_unencrypted_key_with_password(
     serialized_private_key: bytes,
-    key_encryption_password: bytes,
 ):
     with pytest.raises(exceptions.KeyLoadingError):
-        KeyPair.load(serialized_private_key, key_encryption_password)
+        KeyPair.load(serialized_private_key, b"password")
 
 
 def test_load_encrypted_key(
@@ -29,11 +29,35 @@ def test_load_encrypted_key_without_password(encrypted_private_key: bytes):
         KeyPair.load(encrypted_private_key)
 
 
-def test_generate_key_pair():
-    generated_key_pair = KeyPair.generate()
+@pytest.mark.parametrize("size", SUPPORTED_KEY_SIZES)
+def test_generate_key_pair(size):
+    generated_key_pair = KeyPair.generate(size)
     assert isinstance(generated_key_pair, KeyPair)
 
 
 def test_generate_key_pair_invalid_key_size():
     with pytest.raises(exceptions.KeyGenerationError):
         KeyPair.generate(key_size=100)  # type: ignore
+
+
+def test_key_id(key_pair: KeyPair, key_id: bytes):
+    assert key_pair.key_id == key_id
+
+
+def test_serialize_key_without_password(
+    key_pair: KeyPair,
+    serialized_private_key: bytes,
+):
+    result = key_pair.serialize()
+    assert result == serialized_private_key
+
+
+def test_serialize_key_with_password(key_pair: KeyPair):
+    result = key_pair.serialize(b"password")
+    first_line = result.splitlines()[0]
+    assert b"ENCRYPTED" in first_line
+
+
+def test_serialize_key_error(key_pair: KeyPair):
+    with pytest.raises(exceptions.KeySerializationError):
+        key_pair.serialize(123)  # type: ignore

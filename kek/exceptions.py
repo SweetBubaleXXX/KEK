@@ -19,6 +19,11 @@ class KeyLoadingError(KekException):
         super().__init__(message, *args)
 
 
+class KeySerializationError(KekException):
+    def __init__(self, message: str = "Failed to serialize key", *args: object) -> None:
+        super().__init__(message, *args)
+
+
 def raises(
     exception_type: Type[Exception],
     *exc_args,
