@@ -24,6 +24,24 @@ class KeySerializationError(KekException):
         super().__init__(message, *args)
 
 
+class SigningError(KekException):
+    def __init__(
+        self,
+        message: str = "Failed to create signature",
+        *args: object,
+    ) -> None:
+        super().__init__(message, *args)
+
+
+class VerificationError(KekException):
+    def __init__(
+        self,
+        message: str = "Error occurred while verifying signature",
+        *args: object,
+    ) -> None:
+        super().__init__(message, *args)
+
+
 def raises(
     exception_type: Type[Exception],
     *exc_args,

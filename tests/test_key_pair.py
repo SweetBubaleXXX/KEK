@@ -1,3 +1,6 @@
+import io
+from typing import AsyncIterator
+
 import pytest
 
 from kek import KeyPair, exceptions
@@ -44,6 +47,10 @@ def test_key_id(key_pair: KeyPair, key_id: bytes):
     assert key_pair.key_id == key_id
 
 
+def test_public_key_id(key_pair: KeyPair):
+    assert key_pair.public_key.key_id == key_pair.key_id
+
+
 def test_serialize_key_without_password(
     key_pair: KeyPair,
     serialized_private_key: bytes,
@@ -61,3 +68,31 @@ def test_serialize_key_with_password(key_pair: KeyPair):
 def test_serialize_key_error(key_pair: KeyPair):
     with pytest.raises(exceptions.KeySerializationError):
         key_pair.serialize(123)  # type: ignore
+
+
+def test_sign_message(key_pair: KeyPair):
+    key_pair.sign(b"message")
+
+
+def test_sign_stream(key_pair: KeyPair):
+    stream_content = b"content"
+    stream = io.BytesIO(stream_content)
+    key_pair.sign_stream(stream)
+    assert stream.tell() == len(stream_content)
+
+
+def test_sign_iterable(key_pair: KeyPair):
+    iterable = (b"chunk" for _ in range(3))
+    key_pair.sign_iterable(iterable)
+    with pytest.raises(StopIteration):
+        next(iterable)
+
+
+@pytest.mark.asyncio
+async def test_sign_async_iterable(
+    key_pair: KeyPair,
+    async_iterator: AsyncIterator[bytes],
+):
+    await key_pair.sign_async_iterable(async_iterator)
+    with pytest.raises(StopAsyncIteration):
+        await anext(async_iterator)

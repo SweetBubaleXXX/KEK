@@ -1,1 +1,3 @@
-from .keys import KeyPair, PublicKey  # noqa: F401
+# flake8: noqa: F401
+
+from .keys import KeyPair, PublicKey

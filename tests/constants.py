@@ -79,3 +79,14 @@ n0FFUzf9ZstZRB1P/P1EVU12iF5ivKNiPfDtriXBQDDpJ0XyqYgDQTG1mJf92nEP
 qwEFDxkVzniWYHqn5d02kqTbGzrpCMrlGtwnVrGdR9g3
 -----END ENCRYPTED PRIVATE KEY-----
 """
+
+MESSAGE_FOR_SIGNING = b"message for signing\n"
+
+MESSAGE_SIGNATURE_ENCODED = (
+    "Zjvm/qRj8Kx3crdIhJNSe4J1tdYgpi8Lv5OH2QYPeoyLpqiJwsJml2l98qQOt21MSLwOFDzBsIgB71qnf"
+    "1ZdmTqmZjvm/qRj8Kx3crdIhJNSe4J1tdYgpi8Lv5OH2QYPeoyLpqiJwsJml2l98qQOt21MSLwOFDzBsI"
+    "gB71qnf1ZdmTqmAqTQlyd8LqKc8FvdlY1TqSTA4JPf7YDjRzz7whgqKfsOIazg8R4Mwbr7XEdeaM+DXF2"
+    "NKSvF8hAkaRI2oYrU+8yZ/+o54LP13TFpdu0aMyUq2G1Lfr3oFEE/evttyRxj6ZKeKd51xIQgOl+5S2oc"
+    "gTL0LLIMsvsv5lIsraFMspDp923d69gJwhtB8m89guUzEVzownyFCcsiFGqYsqNHEYEbbPshNVSRjUiId"
+    "qmW8xJ4tfyFUgtYNOifIT+9iQ=="
+)

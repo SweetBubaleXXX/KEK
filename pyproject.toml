@@ -17,6 +17,7 @@ cryptography = ">=40,<43"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.1"
+pytest-asyncio = "^0.23.5"
 
 [build-system]
 requires = ["poetry-core"]
