@@ -83,10 +83,9 @@ qwEFDxkVzniWYHqn5d02kqTbGzrpCMrlGtwnVrGdR9g3
 MESSAGE_FOR_SIGNING = b"message for signing\n"
 
 MESSAGE_SIGNATURE_ENCODED = (
-    "Zjvm/qRj8Kx3crdIhJNSe4J1tdYgpi8Lv5OH2QYPeoyLpqiJwsJml2l98qQOt21MSLwOFDzBsIgB71qnf"
-    "1ZdmTqmZjvm/qRj8Kx3crdIhJNSe4J1tdYgpi8Lv5OH2QYPeoyLpqiJwsJml2l98qQOt21MSLwOFDzBsI"
-    "gB71qnf1ZdmTqmAqTQlyd8LqKc8FvdlY1TqSTA4JPf7YDjRzz7whgqKfsOIazg8R4Mwbr7XEdeaM+DXF2"
-    "NKSvF8hAkaRI2oYrU+8yZ/+o54LP13TFpdu0aMyUq2G1Lfr3oFEE/evttyRxj6ZKeKd51xIQgOl+5S2oc"
-    "gTL0LLIMsvsv5lIsraFMspDp923d69gJwhtB8m89guUzEVzownyFCcsiFGqYsqNHEYEbbPshNVSRjUiId"
-    "qmW8xJ4tfyFUgtYNOifIT+9iQ=="
+    "oRuzfJkfWMV5z1bDtvrUHb6ukRFOVllspAPy0ZQrX8VCSNeb2Adju5lj+CN4X5wLeZj9S9i+kgv4p1SgGG"
+    "m1p1mxJ6JtlFJ3nzRqqkd2G+K78pV62Hhj7CHvCR+Ha9pE9sCKndGAvq9DS+QXv4PgDXKvFYuOAz8/69+P"
+    "HNOvRBlOuAd/rQ2E9CuEzXBFOYpxXQWVa7eeHV0P1EWJAs88ISMR5/ccmF6qFaHWvXUxMXZoLAnYPpfT/g"
+    "LdhhI7ILPq1CQuepm3IRiedICf/xFlQBc5pEg37d3kVMZc+OoxVk9/xBvERusuLymkDcoqZAOMUXMlniS+"
+    "xLJmFY+afIZ+UQ=="
 )

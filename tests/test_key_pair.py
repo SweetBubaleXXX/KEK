@@ -1,10 +1,11 @@
 import io
-from typing import AsyncIterator
 
 import pytest
 
 from kek import KeyPair, exceptions
 from kek.constants import SUPPORTED_KEY_SIZES
+
+from .helpers import async_iterator
 
 
 def test_load_key(serialized_private_key: bytes, key_size: int):
@@ -82,17 +83,20 @@ def test_sign_stream(key_pair: KeyPair):
 
 
 def test_sign_iterable(key_pair: KeyPair):
-    iterable = (b"chunk" for _ in range(3))
-    key_pair.sign_iterable(iterable)
+    iterator = (b"chunk" for _ in range(3))
+    key_pair.sign_iterable(iterator)
     with pytest.raises(StopIteration):
-        next(iterable)
+        next(iterator)
 
 
 @pytest.mark.asyncio
-async def test_sign_async_iterable(
-    key_pair: KeyPair,
-    async_iterator: AsyncIterator[bytes],
-):
-    await key_pair.sign_async_iterable(async_iterator)
+async def test_sign_async_iterable(key_pair: KeyPair):
+    iterator = async_iterator(b"message")
+    await key_pair.sign_async_iterable(iterator)
     with pytest.raises(StopAsyncIteration):
-        await anext(async_iterator)
+        await anext(iterator)
+
+
+def test_sign_and_verify(key_pair: KeyPair, message_for_signing: bytes):
+    signature = key_pair.sign(message_for_signing)
+    assert key_pair.public_key.verify(signature, message_for_signing)

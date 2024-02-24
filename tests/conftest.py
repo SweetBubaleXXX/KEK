@@ -1,5 +1,4 @@
 from base64 import b64decode
-from typing import AsyncIterator
 
 import pytest
 
@@ -56,12 +55,3 @@ def key_pair(serialized_private_key: bytes):
 @pytest.fixture
 def public_key(serialized_public_key: bytes):
     return PublicKey.load(serialized_public_key)
-
-
-@pytest.fixture
-def async_iterator():
-    async def generator() -> AsyncIterator[bytes]:
-        for _ in range(5):
-            yield b"chunk"
-
-    return generator()
