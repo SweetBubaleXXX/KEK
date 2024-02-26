@@ -18,14 +18,14 @@ def test_load_unencrypted_key_with_password(
     serialized_private_key: bytes,
 ):
     with pytest.raises(exceptions.KeyLoadingError):
-        KeyPair.load(serialized_private_key, b"password")
+        KeyPair.load(serialized_private_key, password=b"password")
 
 
 def test_load_encrypted_key(
     encrypted_private_key: bytes,
     key_encryption_password: bytes,
 ):
-    KeyPair.load(encrypted_private_key, key_encryption_password)
+    KeyPair.load(encrypted_private_key, password=key_encryption_password)
 
 
 def test_load_encrypted_key_without_password(encrypted_private_key: bytes):
@@ -61,7 +61,7 @@ def test_serialize_key_without_password(
 
 
 def test_serialize_key_with_password(key_pair: KeyPair):
-    result = key_pair.serialize(b"password")
+    result = key_pair.serialize(password=b"password")
     first_line = result.splitlines()[0]
     assert b"ENCRYPTED" in first_line
 
@@ -99,4 +99,4 @@ async def test_sign_async_iterable(key_pair: KeyPair):
 
 def test_sign_and_verify(key_pair: KeyPair, message_for_signing: bytes):
     signature = key_pair.sign(message_for_signing)
-    assert key_pair.public_key.verify(signature, message_for_signing)
+    assert key_pair.public_key.verify(signature, message=message_for_signing)

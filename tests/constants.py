@@ -89,3 +89,21 @@ MESSAGE_SIGNATURE_ENCODED = (
     "LdhhI7ILPq1CQuepm3IRiedICf/xFlQBc5pEg37d3kVMZc+OoxVk9/xBvERusuLymkDcoqZAOMUXMlniS+"
     "xLJmFY+afIZ+UQ=="
 )
+
+MESSAGE_FOR_ENCRYPTION = """\
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Nam rhoncus massa non leo condimentum lobortis.
+Sed accumsan ante id lectus consectetur, vel maximus urna efficitur.
+Integer pulvinar arcu quis justo ultrices mollis.
+Aliquam in risus eu quam condimentum faucibus varius ultricies neque.
+Sed placerat diam quis aliquet dignissim.
+Integer convallis dui nec leo egestas euismod.
+Vivamus interdum libero sed sapien vestibulum, sed maximus justo porta.
+Morbi in erat egestas, laoreet velit fringilla, dictum est.
+Vestibulum pulvinar risus sit amet ultrices ullamcorper.
+Duis facilisis lacus eu scelerisque bibendum.
+Pellentesque a mauris vitae augue hendrerit ullamcorper.
+Fusce a velit a metus ullamcorper vehicula.
+Pellentesque maximus felis non faucibus rutrum.
+Cras nec ante non magna commodo volutpat sed sed sapien.
+"""
