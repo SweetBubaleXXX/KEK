@@ -27,10 +27,10 @@ def test_serialize_key(public_key: PublicKey, serialized_public_key: bytes):
 
 def test_verify_message(
     message_signature: bytes,
-    message_for_signing: bytes,
+    sample_message: bytes,
     public_key: PublicKey,
 ):
-    assert public_key.verify(message_signature, message=message_for_signing)
+    assert public_key.verify(message_signature, message=sample_message)
 
 
 def test_verify_invalid_message(
@@ -41,28 +41,28 @@ def test_verify_invalid_message(
 
 
 def test_verify_invalid_signature(
-    message_for_signing: bytes,
+    sample_message: bytes,
     public_key: PublicKey,
 ):
-    assert not public_key.verify(b"invalid signature", message=message_for_signing)
+    assert not public_key.verify(b"invalid signature", message=sample_message)
 
 
 def test_verify_stream(
     message_signature: bytes,
-    message_for_signing: bytes,
+    sample_message: bytes,
+    sample_message_buffer: io.BufferedIOBase,
     public_key: PublicKey,
 ):
-    stream = io.BytesIO(message_for_signing)
-    assert public_key.verify_stream(message_signature, buffer=stream)
-    assert stream.tell() == len(message_for_signing)
+    assert public_key.verify_stream(message_signature, buffer=sample_message_buffer)
+    assert sample_message_buffer.tell() == len(sample_message)
 
 
 def test_verify_iterable(
     message_signature: bytes,
-    message_for_signing: bytes,
+    sample_message: bytes,
     public_key: PublicKey,
 ):
-    iterator = map(int.to_bytes, message_for_signing)
+    iterator = map(int.to_bytes, sample_message)
     assert public_key.verify_iterable(message_signature, iterable=iterator)
     with pytest.raises(StopIteration):
         next(iterator)
@@ -71,10 +71,10 @@ def test_verify_iterable(
 @pytest.mark.asyncio
 async def test_verify_async_iterable(
     message_signature: bytes,
-    message_for_signing: bytes,
+    sample_message: bytes,
     public_key: PublicKey,
 ):
-    iterator = async_iterator(message_for_signing)
+    iterator = async_iterator(sample_message)
     assert await public_key.verify_async_iterable(message_signature, iterable=iterator)
     with pytest.raises(StopAsyncIteration):
         await anext(iterator)
@@ -99,14 +99,32 @@ def test_v1_encryptor_get_metadata(
     assert len(metadata) - len(header) == public_key.key_size / 8
 
 
-def test_v1_encryptor_encrypt_message(v1_encryptor: EncryptionBackend):
-    message = b"message for encryption"
-    encrypted_message = v1_encryptor.encrypt(message)
-    _validate_v1_encrypted_data(encrypted_message, message)
+def test_v1_encryptor_encrypt_message(
+    v1_encryptor: EncryptionBackend,
+    sample_message: bytes,
+):
+    encrypted_message = v1_encryptor.encrypt(sample_message)
+    _validate_v1_encrypted_data(encrypted_message, sample_message)
 
 
-def test_v1_encryptor_encrypt_stream(v1_encryptor: EncryptionBackend):
-    message = b"message for encryption"
-    stream = io.BytesIO(message)
-    encrypted_message = b"".join(v1_encryptor.encrypt_stream(stream))
-    _validate_v1_encrypted_data(encrypted_message, message)
+def test_v1_encryptor_encrypt_stream(
+    v1_encryptor: EncryptionBackend,
+    sample_message: bytes,
+    sample_message_buffer: io.BufferedIOBase,
+):
+    stream_encryption_generator = v1_encryptor.encrypt_stream(sample_message_buffer)
+    encrypted_message = b"".join(stream_encryption_generator)
+    _validate_v1_encrypted_data(encrypted_message, sample_message)
+
+
+def test_v1_encryptor_encrypt_stream_custom_chunk_size(
+    v1_encryptor: EncryptionBackend,
+    sample_message: bytes,
+    sample_message_buffer: io.BufferedIOBase,
+):
+    stream_encryption_generator = v1_encryptor.encrypt_stream(
+        sample_message_buffer,
+        chunk_length=64,
+    )
+    encrypted_message = b"".join(stream_encryption_generator)
+    _validate_v1_encrypted_data(encrypted_message, sample_message)

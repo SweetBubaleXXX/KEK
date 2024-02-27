@@ -4,6 +4,18 @@ KEY_SIZE = 2048
 
 KEY_ENCRYPTION_PASSWORD = b"testpass"
 
+SERIALIZED_PUBLIC_KEY = b"""\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuUFGKKHc4TJbzzXUnWGy
+yPGXGpxkf0zUrWDz8cDMX0ukUNE+4EWpDqpp6hCohzfbrWdH9AYAA76YPMZrQ6KD
+eXzCJUrC+9uZJEdCMEnSfEPEqBdG949pIM6881a1uKvO2elG2UbbK4Mqn2uFR+uC
+aCuJlXaD1kJ1Uv3Pp5FhXzfG48RdjnNFpIB4YSqHguEvhW9jhJW/FR008KHmfONp
+Ohb6GaxZKF7fGpQbgIujdD73t0W4eMC+1M7H0HkdiTjufCkHPjYfKX/yY+IzR5g+
+orjErU10zk4IbkRrf5Rjn5fxz5IUBYlgEfk2eHxeZNEFdf78QaFHB47BNyQY1gD5
+2QIDAQAB
+-----END PUBLIC KEY-----
+"""
+
 SERIALIZED_PRIVATE_KEY = b"""\
 -----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5QUYoodzhMlvP
@@ -33,18 +45,6 @@ xlYADbzAlONpkEaFaslWOWsPKzqZQkZZP8wmFM6bglBodYxOt9tIpFRwYb3osLg3
 XVY3slto6PXY/0HUoUalMCZy8diZ0JbzvsIDI9K6WLH+PK+yLAROkWV/B/yA0VWr
 XnOlyTrYtG8p1de+sz97yEyf
 -----END PRIVATE KEY-----
-"""
-
-SERIALIZED_PUBLIC_KEY = b"""\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuUFGKKHc4TJbzzXUnWGy
-yPGXGpxkf0zUrWDz8cDMX0ukUNE+4EWpDqpp6hCohzfbrWdH9AYAA76YPMZrQ6KD
-eXzCJUrC+9uZJEdCMEnSfEPEqBdG949pIM6881a1uKvO2elG2UbbK4Mqn2uFR+uC
-aCuJlXaD1kJ1Uv3Pp5FhXzfG48RdjnNFpIB4YSqHguEvhW9jhJW/FR008KHmfONp
-Ohb6GaxZKF7fGpQbgIujdD73t0W4eMC+1M7H0HkdiTjufCkHPjYfKX/yY+IzR5g+
-orjErU10zk4IbkRrf5Rjn5fxz5IUBYlgEfk2eHxeZNEFdf78QaFHB47BNyQY1gD5
-2QIDAQAB
------END PUBLIC KEY-----
 """
 
 ENCRYPTED_PRIVATE_KEY = b"""\
@@ -80,17 +80,7 @@ qwEFDxkVzniWYHqn5d02kqTbGzrpCMrlGtwnVrGdR9g3
 -----END ENCRYPTED PRIVATE KEY-----
 """
 
-MESSAGE_FOR_SIGNING = b"message for signing\n"
-
-MESSAGE_SIGNATURE_ENCODED = (
-    "oRuzfJkfWMV5z1bDtvrUHb6ukRFOVllspAPy0ZQrX8VCSNeb2Adju5lj+CN4X5wLeZj9S9i+kgv4p1SgGG"
-    "m1p1mxJ6JtlFJ3nzRqqkd2G+K78pV62Hhj7CHvCR+Ha9pE9sCKndGAvq9DS+QXv4PgDXKvFYuOAz8/69+P"
-    "HNOvRBlOuAd/rQ2E9CuEzXBFOYpxXQWVa7eeHV0P1EWJAs88ISMR5/ccmF6qFaHWvXUxMXZoLAnYPpfT/g"
-    "LdhhI7ILPq1CQuepm3IRiedICf/xFlQBc5pEg37d3kVMZc+OoxVk9/xBvERusuLymkDcoqZAOMUXMlniS+"
-    "xLJmFY+afIZ+UQ=="
-)
-
-MESSAGE_FOR_ENCRYPTION = """\
+SAMPLE_MESSAGE = b"""\
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Nam rhoncus massa non leo condimentum lobortis.
 Sed accumsan ante id lectus consectetur, vel maximus urna efficitur.
@@ -107,3 +97,32 @@ Fusce a velit a metus ullamcorper vehicula.
 Pellentesque maximus felis non faucibus rutrum.
 Cras nec ante non magna commodo volutpat sed sed sapien.
 """
+
+MESSAGE_SIGNATURE_ENCODED = (
+    "OV3m/u9cfq+aOrjD96o8XVhpf1IOSPmJaQhsfvdxxJ7Okgvx74isPoTDKyBjVQNHnQTJJ/Hk8WdQed5YwS"
+    "BK1xb2zOJC5ewAUOa5ezH2UdQZ+kvH6xrznfN+ys68ubKPZ1EwyNuX6aw82UDkI/JShaW42lqCx8jjlZUH"
+    "ULKQdLrWmAbPAm+LXg5T1K6hs1L2/3Nmg7JQahZNkQRjdLcLvDc88WZOGub6rsER/NHk2cS92Z3nKyal5u"
+    "QWXxOmfBtFYDEF5G6WQdOpX8r2NS5SgNAzgsE9lDW9Lc4hrH3JkyxIV9PUIpt+q/SKNneXFkBt5ZA0JGoA"
+    "UdzG+KXcAeNizQ=="
+)
+
+ENCRYPTED_MESSAGE = (
+    "AWpQ2W+RKP4fJ5PBZ7A0jtq19iCR2rJ2qIThsPcMF4kG0tx/PKqabPQ2AA/UIIjZi6QU/xbkfcPfRcYWl/"
+    "/15HikGlCt3o66XV4g30W/IzrO44d3+3cgsd1ai7qAW8q6zJmE+eOEE3UchKqma9WXxrxjAOdIQ7mNt9Zc"
+    "5BGjWnNKO2w/+gcpEX/h8rVhe9xb2LyDrqaSvUA3ZespTC/qUXjwN12aDQnA910iymfkk7JKTakyhNI98K"
+    "uCZ8EXFcQvFhcjDezFqw+d6g71FlgZWDlRENEouxBkUCFz+jSy5EdGliMIxVql0ZdHaaTWt81dr/PJbSfG"
+    "qX/UDUkx9q0odbIjuPUzj6Jw9Ior0AQa5n4JRmz7lQRPDOR/Labyg/UU+07XVjHFxaVhaRjrmw5EeGHRrK"
+    "FPf3vqr7By3o+bYda1yfPwqQxITG5FybngICQpYaPallFTMxrpWi0a7xHneF6be940Z3+ssOCa9JO6qfHP"
+    "Igxrn2pQY+8DWxNodSAEuap48mXEXcjWlfns/YnIrG8ZK5GuabdZfYnJPIBDNlKHPr9xSnZUUrvqyAzWkv"
+    "BIbueV+AEQ0jZuoqM+NJsuSWBAktPktsM9YI5E5Yz9jvPJCQa7uhu1f+qoVS9vcP+mjpp48kHy0/NrbKPy"
+    "pDc4z1TqLjA+aN8t16zOXwq/dXs25mLf+kvgw7nTx/L7Lse61Ko0Iu3f1r2mM7a38Z3l1lgCl0mM2oqxdW"
+    "wLP2I221GVjhvaSCkelKBu0yFV+snM7Cf2XhUkANSpIJHZV2EGHHjzb9Zi9P4D7f/uV7IJO1b4O7KYujM3"
+    "z/V3UC4dvKR86+F2siOWi24dyb0kElMG01AqseqiDCNns8nk7Q1wwCwBzXMVdts8YD8ldH/pm6DzQmFO9X"
+    "/71sh+kGoSXRAdPhpLoi2jlGr72CgzNXgRwP9CCeOcPHsob7q6VYxxotyL0CPPaOYbIXOOwTJdCMrw/NKe"
+    "vzBaroIoU69nJTkP4Y3z9y/2BAXkB7wgBO0d9VllxBLfD7S4yChP055p4gq5IoxBB0XIZ7hVl08Q6mhWvq"
+    "ZkH6lHB5Wu6l0kfbmz31LE8zxQ7Q0ygFHtdLDSgeOn6ETa1n6eJhmO2BgZCvvESsG+nonWuT0gqfJBEkrW"
+    "ESgYJJUVEBOONtvUSD15K3d8Jncxy2aquWs1QU43AcaoHcRcbh9+Vny76H77NlLwoUoPF4y2FQcsgh9j3G"
+    "Wj4E9qa3H9m6IXERY75EShcGI3J8DWNdzRUyxjKNC5ol1nt6pRfotwBLnF4B6GZS/xJXJP6Y9UCH2M8rT0"
+    "4TKhd9z+ftupI+vPMEYorNbBVjNjjjTn7UWXvQ+01VAyVsDBJtP6zfxgYt1jGf7KtqPjT5IR3VNl7ablaD"
+    "OeNf/RfMvHOUzDSwpzKKe/7DocTxnikx71GzG0UfZWPmUSL9GFQ643g6wue6vWCpqabHM="
+)

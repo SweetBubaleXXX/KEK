@@ -1,3 +1,4 @@
+import io
 from base64 import b64decode
 
 import pytest
@@ -38,8 +39,13 @@ def encrypted_private_key():
 
 
 @pytest.fixture
-def message_for_signing():
-    return constants.MESSAGE_FOR_SIGNING
+def sample_message():
+    return constants.SAMPLE_MESSAGE
+
+
+@pytest.fixture
+def sample_message_buffer(sample_message: bytes):
+    return io.BytesIO(sample_message)
 
 
 @pytest.fixture

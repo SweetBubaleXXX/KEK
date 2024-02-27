@@ -9,13 +9,17 @@ from cryptography.hazmat.primitives.asymmetric import rsa, utils
 
 from . import constants, exceptions
 from .backends import v1
+from .backends.decryption import DecryptionBackend
 from .backends.encryption import EncryptionBackend
 from .exceptions import async_raises, raises
 
 _ENCRYPTION_BACKENDS: Mapping[
-    constants.KekAlgorithmVersion,
-    type[EncryptionBackend],
+    constants.KekAlgorithmVersion, type[EncryptionBackend]
 ] = MappingProxyType({1: v1.Encryptor})
+
+_DECRYPTION_BACKENDS: Mapping[
+    constants.KekAlgorithmVersion, type[DecryptionBackend]
+] = MappingProxyType({1: v1.Decryptor})
 
 
 class PublicKey:

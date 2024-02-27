@@ -71,15 +71,17 @@ def test_serialize_key_error(key_pair: KeyPair):
         key_pair.serialize(123)  # type: ignore
 
 
-def test_sign_message(key_pair: KeyPair):
-    key_pair.sign(b"message")
+def test_sign_message(key_pair: KeyPair, sample_message: bytes):
+    key_pair.sign(sample_message)
 
 
-def test_sign_stream(key_pair: KeyPair):
-    stream_content = b"content"
-    stream = io.BytesIO(stream_content)
-    key_pair.sign_stream(stream)
-    assert stream.tell() == len(stream_content)
+def test_sign_stream(
+    key_pair: KeyPair,
+    sample_message: bytes,
+    sample_message_buffer: io.BufferedIOBase,
+):
+    key_pair.sign_stream(sample_message_buffer)
+    assert sample_message_buffer.tell() == len(sample_message)
 
 
 def test_sign_iterable(key_pair: KeyPair):
@@ -97,6 +99,6 @@ async def test_sign_async_iterable(key_pair: KeyPair):
         await anext(iterator)
 
 
-def test_sign_and_verify(key_pair: KeyPair, message_for_signing: bytes):
-    signature = key_pair.sign(message_for_signing)
-    assert key_pair.public_key.verify(signature, message=message_for_signing)
+def test_sign_and_verify(key_pair: KeyPair, sample_message: bytes):
+    signature = key_pair.sign(sample_message)
+    assert key_pair.public_key.verify(signature, message=sample_message)
