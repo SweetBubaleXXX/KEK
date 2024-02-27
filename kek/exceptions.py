@@ -42,7 +42,7 @@ class VerificationError(KekException):
         super().__init__(message, *args)
 
 
-class EncrytionError(KekException):
+class EncryptionError(KekException):
     def __init__(self, message: str = "Encryption failed", *args: object) -> None:
         super().__init__(message, *args)
 
@@ -66,6 +66,8 @@ def raises(
                 if isinstance(exc, exception_type):
                     raise
                 raise exception_type(*exc_args, **exc_kwargs) from exc
+            except StopIteration:
+                raise
             except Exception as exc:
                 raise exception_type(*exc_args, **exc_kwargs) from exc
 
@@ -88,6 +90,8 @@ def async_raises(
                 if isinstance(exc, exception_type):
                     raise
                 raise exception_type(*exc_args, **exc_kwargs) from exc
+            except StopAsyncIteration:
+                raise
             except Exception as exc:
                 raise exception_type(*exc_args, **exc_kwargs) from exc
 

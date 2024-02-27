@@ -2,16 +2,10 @@ import io
 
 import pytest
 
-from kek import EncryptionBackend, PublicKey
-from kek.backends import v1
+from kek import PublicKey
+from kek.constants import LATEST_KEK_VERSION
 
 from .helpers import async_iterator
-
-
-def _validate_v1_encrypted_data(encrypted: bytes, original: bytes):
-    assert len(encrypted) > len(original)
-    assert len(encrypted) <= len(original) + v1.SYMMETRIC_BLOCK_LENGTH
-    assert len(encrypted) % v1.SYMMETRIC_BLOCK_LENGTH == 0
 
 
 def test_load_key(serialized_public_key: bytes, key_size: int):
@@ -80,51 +74,6 @@ async def test_verify_async_iterable(
         await anext(iterator)
 
 
-def test_v1_encryptor_get_header(
-    v1_encryptor: EncryptionBackend,
-    public_key: PublicKey,
-):
-    header = v1_encryptor.get_header()
-    assert header[0] == 1
-    assert header[1:] == public_key.key_id
-
-
-def test_v1_encryptor_get_metadata(
-    v1_encryptor: EncryptionBackend,
-    public_key: PublicKey,
-):
-    header = v1_encryptor.get_header()
-    metadata = v1_encryptor.get_metadata()
-    assert metadata.startswith(header)
-    assert len(metadata) - len(header) == public_key.key_size / 8
-
-
-def test_v1_encryptor_encrypt_message(
-    v1_encryptor: EncryptionBackend,
-    sample_message: bytes,
-):
-    encrypted_message = v1_encryptor.encrypt(sample_message)
-    _validate_v1_encrypted_data(encrypted_message, sample_message)
-
-
-def test_v1_encryptor_encrypt_stream(
-    v1_encryptor: EncryptionBackend,
-    sample_message: bytes,
-    sample_message_buffer: io.BufferedIOBase,
-):
-    stream_encryption_generator = v1_encryptor.encrypt_stream(sample_message_buffer)
-    encrypted_message = b"".join(stream_encryption_generator)
-    _validate_v1_encrypted_data(encrypted_message, sample_message)
-
-
-def test_v1_encryptor_encrypt_stream_custom_chunk_size(
-    v1_encryptor: EncryptionBackend,
-    sample_message: bytes,
-    sample_message_buffer: io.BufferedIOBase,
-):
-    stream_encryption_generator = v1_encryptor.encrypt_stream(
-        sample_message_buffer,
-        chunk_length=64,
-    )
-    encrypted_message = b"".join(stream_encryption_generator)
-    _validate_v1_encrypted_data(encrypted_message, sample_message)
+def test_get_default_encryptor(public_key: PublicKey):
+    encryptor = public_key.get_encryptor()
+    assert encryptor.version == LATEST_KEK_VERSION

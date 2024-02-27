@@ -32,19 +32,27 @@ class _StreamEncryptionIterator:
         self._encryptor = encryptor
         self._buffer = buffer
         self._chunk_length = chunk_length
+
         self._finalized = False
 
     def __iter__(self) -> Self:
         return self
 
+    @raises(exceptions.EncryptionError)
     def __next__(self) -> bytes:
         if self._finalized:
             raise StopIteration()
+
         chunk = self._buffer.read(self._chunk_length)
-        if len(chunk) == SYMMETRIC_BLOCK_LENGTH:
+        if len(chunk) == self._chunk_length:
             return self._encryptor.update(chunk)
+
         last_chunk = _add_padding(chunk)
-        return self._encryptor.update(last_chunk) + self._encryptor.finalize()
+        encrypted_last_chunk = (
+            self._encryptor.update(last_chunk) + self._encryptor.finalize()
+        )
+        self._finalized = True
+        return encrypted_last_chunk
 
 
 class Encryptor(EncryptionBackend):
@@ -63,7 +71,7 @@ class Encryptor(EncryptionBackend):
             modes.CBC(self._initialization_vector),
         )
 
-    @raises(exceptions.EncrytionError)
+    @raises(exceptions.EncryptionError)
     def get_metadata(self) -> bytes:
         header = self.get_header()
         symmetric_key = self._symmetric_key + self._initialization_vector
@@ -73,25 +81,25 @@ class Encryptor(EncryptionBackend):
         )
         return header + encrypted_symmetric_key
 
-    @raises(exceptions.EncrytionError)
+    @raises(exceptions.EncryptionError)
     def encrypt(self, body: bytes) -> bytes:
         encryptor = self._cipher.encryptor()
         padded_body = _add_padding(body)
         return encryptor.update(padded_body) + encryptor.finalize()
 
+    @raises(exceptions.EncryptionError)
     def encrypt_stream(
         self,
         buffer: io.BufferedIOBase,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:
+        if chunk_length % SYMMETRIC_BLOCK_LENGTH:
+            raise exceptions.EncryptionError(
+                "Chunk length is not multiple of block length"
+            )
         encryptor = self._cipher.encryptor()
-        chunk = buffer.read(chunk_length)
-        while len(chunk) == chunk_length:
-            yield encryptor.update(chunk)
-            chunk = buffer.read(chunk_length)
-        last_chunk = _add_padding(chunk)
-        yield encryptor.update(last_chunk) + encryptor.finalize()
+        return _StreamEncryptionIterator(encryptor, buffer, chunk_length)
 
 
 class Decryptor(DecryptionBackend):
