@@ -77,3 +77,9 @@ async def test_verify_async_iterable(
 def test_get_default_encryptor(public_key: PublicKey):
     encryptor = public_key.get_encryptor()
     assert encryptor.version == LATEST_KEK_VERSION
+
+
+@pytest.mark.parametrize("version", (-1, 0, LATEST_KEK_VERSION + 1))
+def test_get_encryptor_invalid_version(version: int, public_key: PublicKey):
+    with pytest.raises(ValueError):
+        public_key.get_encryptor(version=version)

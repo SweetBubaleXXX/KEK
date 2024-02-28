@@ -11,7 +11,7 @@ from ..constants import KekAlgorithmVersion
 class EncryptionBackend(metaclass=ABCMeta):
     version: KekAlgorithmVersion
 
-    def __init__(self, key_id: bytes, public_key: rsa.RSAPublicKey,) -> None:
+    def __init__(self, key_id: bytes, public_key: rsa.RSAPublicKey) -> None:
         self._key_id = key_id
         self._public_key = public_key
 
@@ -27,7 +27,7 @@ class EncryptionBackend(metaclass=ABCMeta):
     @abstractmethod
     def encrypt_stream(
         self,
-        stream: io.BufferedIOBase,
+        buffer: io.BufferedIOBase,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]: ...

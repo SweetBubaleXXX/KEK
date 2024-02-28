@@ -17,6 +17,8 @@ KEY_ID_HASH_ALGORITHM = hashes.SHA256()
 
 KEY_ID_LENGTH = 8
 
+KEY_ID_SLICE = slice(1, 1 + KEY_ID_LENGTH)
+
 KEY_SERIALIZATION_ENCODING = serialization.Encoding.PEM
 
 PRIVATE_KEY_FORMAT = serialization.PrivateFormat.PKCS8

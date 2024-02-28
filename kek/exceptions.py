@@ -47,7 +47,7 @@ class EncryptionError(KekException):
         super().__init__(message, *args)
 
 
-class DecrytionError(KekException):
+class DecryptionError(KekException):
     def __init__(self, message: str = "Decryption failed", *args: object) -> None:
         super().__init__(message, *args)
 

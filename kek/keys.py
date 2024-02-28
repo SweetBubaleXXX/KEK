@@ -13,13 +13,17 @@ from .backends.decryption import DecryptionBackend
 from .backends.encryption import EncryptionBackend
 from .exceptions import async_raises, raises
 
-_ENCRYPTION_BACKENDS: Mapping[
-    constants.KekAlgorithmVersion, type[EncryptionBackend]
-] = MappingProxyType({1: v1.Encryptor})
+_ENCRYPTION_BACKENDS: Mapping[int, type[EncryptionBackend]] = MappingProxyType(
+    {
+        1: v1.Encryptor,
+    }
+)
 
-_DECRYPTION_BACKENDS: Mapping[
-    constants.KekAlgorithmVersion, type[DecryptionBackend]
-] = MappingProxyType({1: v1.Decryptor})
+_DECRYPTION_BACKENDS: Mapping[int, type[DecryptionBackend]] = MappingProxyType(
+    {
+        1: v1.Decryptor,
+    }
+)
 
 
 class PublicKey:
@@ -50,8 +54,12 @@ class PublicKey:
     def get_encryptor(
         self,
         *,
-        version: constants.KekAlgorithmVersion = constants.LATEST_KEK_VERSION,
+        version: int = constants.LATEST_KEK_VERSION,
     ) -> EncryptionBackend:
+        if version <= 0 or version > constants.LATEST_KEK_VERSION:
+            raise ValueError(
+                f"Latest supported version is {constants.LATEST_KEK_VERSION}"
+            )
         return _ENCRYPTION_BACKENDS[version](self.key_id, self._key)
 
     @raises(exceptions.KeySerializationError)
@@ -222,6 +230,22 @@ class KeyPair:
             digest,
             hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
+
+    @raises(exceptions.DecryptionError)
+    def decrypt(self, message: bytes) -> bytes:
+        algorithm_version = message[0]
+        if algorithm_version > constants.LATEST_KEK_VERSION:
+            raise exceptions.DecryptionError(
+                "Data is encrypted with unsupported version of algorithm ({})".format(
+                    algorithm_version
+                )
+            )
+
+        encryption_key_id = message[constants.KEY_ID_SLICE]
+        if encryption_key_id != self.key_id:
+            raise exceptions.DecryptionError("Data is encrypted with different key")
+
+        decryptor = _DECRYPTION_BACKENDS[algorithm_version](self.key_id)
 
     def _create_signature(
         self,

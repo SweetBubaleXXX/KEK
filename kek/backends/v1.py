@@ -9,7 +9,6 @@ from cryptography.hazmat.primitives.padding import PKCS7
 
 from .. import constants, exceptions
 from ..exceptions import raises
-from .decryption import DecryptionBackend
 from .encryption import EncryptionBackend
 
 SYMMETRIC_KEY_LENGTH = 32
@@ -100,7 +99,3 @@ class Encryptor(EncryptionBackend):
             )
         encryptor = self._cipher.encryptor()
         return _StreamEncryptionIterator(encryptor, buffer, chunk_length)
-
-
-class Decryptor(DecryptionBackend):
-    pass
