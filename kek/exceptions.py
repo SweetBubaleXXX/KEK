@@ -6,50 +6,40 @@ P = ParamSpec("P")
 
 
 class KekException(Exception):
-    pass
+    """Generic KEK exception."""
+
+    DEFAULT_MESSAGE = "An error occurred"
+
+    def __init__(self, message: str | None = None, *args: object) -> None:
+        super().__init__(message or self.DEFAULT_MESSAGE, *args)
 
 
 class KeyGenerationError(KekException):
-    def __init__(self, message: str = "Failed to generate key", *args: object) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Failed to generate key"
 
 
 class KeyLoadingError(KekException):
-    def __init__(self, message: str = "Failed to load key", *args: object) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Failed to load key"
 
 
 class KeySerializationError(KekException):
-    def __init__(self, message: str = "Failed to serialize key", *args: object) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Failed to serialize key"
 
 
 class SigningError(KekException):
-    def __init__(
-        self,
-        message: str = "Failed to create signature",
-        *args: object,
-    ) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Failed to create signature"
 
 
 class VerificationError(KekException):
-    def __init__(
-        self,
-        message: str = "Error occurred while verifying signature",
-        *args: object,
-    ) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Error occurred while verifying signature"
 
 
 class EncryptionError(KekException):
-    def __init__(self, message: str = "Encryption failed", *args: object) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Encryption failed"
 
 
 class DecryptionError(KekException):
-    def __init__(self, message: str = "Decryption failed", *args: object) -> None:
-        super().__init__(message, *args)
+    DEFAULT_MESSAGE = "Decryption failed"
 
 
 def raises(
@@ -57,6 +47,8 @@ def raises(
     *exc_args,
     **exc_kwargs,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    """Catches exceptions and re-raises an exception of the specified type."""
+
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -76,11 +68,13 @@ def raises(
     return decorator
 
 
-def async_raises(
+def raises_async(
     exception_type: Type[Exception],
     *exc_args,
     **exc_kwargs,
 ) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
+    """Same as `raises()` but for async functions."""
+
     def decorator(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:

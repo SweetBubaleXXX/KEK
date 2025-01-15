@@ -40,7 +40,7 @@ class _StreamEncryptionIterator:
     @raises(exceptions.EncryptionError)
     def __next__(self) -> bytes:
         if self._finalized:
-            raise StopIteration()
+            raise StopIteration("Encryption finalized")
 
         chunk = self._buffer.read(self._chunk_length)
         if len(chunk) == self._chunk_length:
@@ -73,9 +73,9 @@ class Encryptor(EncryptionBackend):
     @raises(exceptions.EncryptionError)
     def get_metadata(self) -> bytes:
         header = self.get_header()
-        symmetric_key = self._symmetric_key + self._initialization_vector
+        symmetric_key_with_iv = self._symmetric_key + self._initialization_vector
         encrypted_symmetric_key = self._public_key.encrypt(
-            symmetric_key,
+            symmetric_key_with_iv,
             constants.ASYMMETRIC_ENCRYPTION_PADDING,
         )
         return header + encrypted_symmetric_key

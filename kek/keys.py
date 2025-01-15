@@ -11,7 +11,7 @@ from . import constants, exceptions
 from .backends import v1
 from .backends.decryption import DecryptionBackend
 from .backends.encryption import EncryptionBackend
-from .exceptions import async_raises, raises
+from .exceptions import raises, raises_async
 
 _ENCRYPTION_BACKENDS: Mapping[int, type[EncryptionBackend]] = MappingProxyType(
     {
@@ -21,7 +21,7 @@ _ENCRYPTION_BACKENDS: Mapping[int, type[EncryptionBackend]] = MappingProxyType(
 
 _DECRYPTION_BACKENDS: Mapping[int, type[DecryptionBackend]] = MappingProxyType(
     {
-        1: v1.Decryptor,
+        # 1: v1.Decryptor,
     }
 )
 
@@ -103,7 +103,7 @@ class PublicKey:
             hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
-    @async_raises(exceptions.VerificationError)
+    @raises_async(exceptions.VerificationError)
     async def verify_async_iterable(
         self,
         signature: bytes,
@@ -220,7 +220,7 @@ class KeyPair:
             hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
-    @async_raises(exceptions.SigningError)
+    @raises_async(exceptions.SigningError)
     async def sign_async_iterable(self, message: AsyncIterable[bytes]) -> bytes:
         hasher = hashes.Hash(constants.SIGNATURE_HASH_ALGORITHM)
         async for chunk in message:

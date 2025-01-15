@@ -61,8 +61,3 @@ def key_pair(serialized_private_key: bytes):
 @pytest.fixture
 def public_key(serialized_public_key: bytes):
     return PublicKey.load(serialized_public_key)
-
-
-@pytest.fixture
-def v1_encryptor(public_key: PublicKey):
-    return public_key.get_encryptor(version=1)
