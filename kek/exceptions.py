@@ -47,7 +47,7 @@ def raises(
     *exc_args,
     **exc_kwargs,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Catches exceptions and re-raises an exception of the specified type."""
+    """Catch exceptions and re-raise an exception of the specified type with kwargs."""
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)

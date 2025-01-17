@@ -28,17 +28,27 @@ class StreamDecryptionBackend(metaclass=ABCMeta):
 
     def __init__(
         self,
-        key_id: bytes,
         buffer: io.BufferedIOBase,
         private_key: rsa.RSAPrivateKey,
     ) -> None:
-        self._key_id = key_id
         self._buffer = buffer
         self._private_key = private_key
 
-    @property
-    def key_id(self) -> bytes:
-        return self._key_id
-
     @abstractmethod
     def decrypt(self) -> Iterator[bytes]: ...
+
+
+class DecryptorBackendFactory(metaclass=ABCMeta):
+    version: KekAlgorithmVersion
+
+    @staticmethod
+    @abstractmethod
+    def get_decryptor(
+        data: bytes, *, private_key: rsa.RSAPrivateKey
+    ) -> DecryptionBackend: ...
+
+    @staticmethod
+    @abstractmethod
+    def get_stream_decryptor(
+        buffer: io.BufferedIOBase, *, private_key: rsa.RSAPrivateKey
+    ) -> StreamDecryptionBackend: ...

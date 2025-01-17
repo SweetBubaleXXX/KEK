@@ -2,10 +2,16 @@ import io
 import os
 from typing import Iterator, Self
 
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.ciphers import Cipher, CipherContext, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES256
 from cryptography.hazmat.primitives.padding import PKCS7
+
+from kek.backends.decryption import (
+    DecryptionBackend,
+    DecryptorBackendFactory,
+    StreamDecryptionBackend,
+)
 
 from .. import constants, exceptions
 from ..exceptions import raises
@@ -19,6 +25,19 @@ _SYMMETRIC_PADDING = PKCS7(SYMMETRIC_BLOCK_LENGTH * 8)
 def _add_padding(block: bytes) -> bytes:
     padder = _SYMMETRIC_PADDING.padder()
     return padder.update(block) + padder.finalize()
+
+
+def _remove_padding(block: bytes) -> bytes:
+    unpadder = _SYMMETRIC_PADDING.unpadder()
+    return unpadder.update(block) + unpadder.finalize()
+
+
+def _get_aes_cipher(symmetric_key: bytes, initialization_vector: bytes) -> Cipher:
+    """Return an AES cipher in CBC mode."""
+    return Cipher(
+        AES256(symmetric_key),
+        modes.CBC(initialization_vector),
+    )
 
 
 class _StreamEncryptionIterator:
@@ -65,10 +84,7 @@ class Encryptor(EncryptionBackend):
         super().__init__(key_id, public_key)
         self._symmetric_key = os.urandom(SYMMETRIC_KEY_LENGTH)
         self._initialization_vector = os.urandom(SYMMETRIC_BLOCK_LENGTH)
-        self._cipher = Cipher(
-            AES256(self._symmetric_key),
-            modes.CBC(self._initialization_vector),
-        )
+        self._cipher = _get_aes_cipher(self._symmetric_key, self._initialization_vector)
 
     @raises(exceptions.EncryptionError)
     def get_metadata(self) -> bytes:
@@ -99,3 +115,60 @@ class Encryptor(EncryptionBackend):
             )
         encryptor = self._cipher.encryptor()
         return _StreamEncryptionIterator(encryptor, buffer, chunk_length)
+
+
+class Decryptor(DecryptionBackend):
+    version = 1
+
+    def __init__(self, data: bytes, private_key: RSAPrivateKey) -> None:
+        super().__init__(data, private_key)
+        self._metadata_length = self._private_key.key_size // 8
+        self._metadata_start_position = constants.KEY_ID_SLICE.stop
+        self._metadata_end_position = (
+            self._metadata_start_position + self._metadata_length
+        )
+
+    @raises(exceptions.DecryptionError)
+    def decrypt(self) -> bytes:
+        decrypted_metadata = self._decrypt_metadata()
+        symmetric_cipher = self._create_cipher_from_metadata(decrypted_metadata)
+        symmetric_decryptor = symmetric_cipher.decryptor()
+        decrypted_data = (
+            symmetric_decryptor.update(self._data[self._metadata_end_position :])
+            + symmetric_decryptor.finalize()
+        )
+        return _remove_padding(decrypted_data)
+
+    def _decrypt_metadata(self) -> bytes:
+        encrypted_metadata = self._data[
+            self._metadata_start_position : self._metadata_end_position
+        ]
+
+        return self._private_key.decrypt(
+            encrypted_metadata,
+            constants.ASYMMETRIC_ENCRYPTION_PADDING,
+        )
+
+    def _create_cipher_from_metadata(self, decrypted_metadata: bytes) -> Cipher:
+        symmetric_key = decrypted_metadata[:SYMMETRIC_KEY_LENGTH]
+        initialization_vector = decrypted_metadata[SYMMETRIC_KEY_LENGTH:]
+
+        return _get_aes_cipher(symmetric_key, initialization_vector)
+
+
+class StreamDecryptor(StreamDecryptionBackend):
+    pass
+
+
+class DecryptorFactory(DecryptorBackendFactory):
+    version = 1
+
+    @staticmethod
+    def get_decryptor(data: bytes, private_key: RSAPrivateKey) -> Decryptor:
+        return Decryptor(data, private_key)
+
+    @staticmethod
+    def get_stream_decryptor(
+        buffer: io.BufferedIOBase, private_key: RSAPrivateKey
+    ) -> StreamDecryptor:
+        pass

@@ -44,7 +44,7 @@ def sample_message():
 
 
 @pytest.fixture
-def sample_message_buffer(sample_message: bytes):
+def sample_message_buffer(sample_message):
     return io.BytesIO(sample_message)
 
 
@@ -54,10 +54,15 @@ def message_signature():
 
 
 @pytest.fixture
-def key_pair(serialized_private_key: bytes):
+def encrypted_message():
+    return b64decode(constants.ENCRYPTED_MESSAGE)
+
+
+@pytest.fixture
+def key_pair(serialized_private_key):
     return KeyPair.load(serialized_private_key)
 
 
 @pytest.fixture
-def public_key(serialized_public_key: bytes):
+def public_key(serialized_public_key):
     return PublicKey.load(serialized_public_key)

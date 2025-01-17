@@ -1,27 +1,34 @@
 from functools import cached_property
 from io import BufferedIOBase
 from types import MappingProxyType
-from typing import AsyncIterable, Iterable, Mapping, Self
+from typing import AsyncIterable, Callable, Iterable, Mapping, Self
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, utils
 
+from kek import helpers
+
 from . import constants, exceptions
 from .backends import v1
-from .backends.decryption import DecryptionBackend
+from .backends.decryption import DecryptorBackendFactory
 from .backends.encryption import EncryptionBackend
 from .exceptions import raises, raises_async
 
-_ENCRYPTION_BACKENDS: Mapping[int, type[EncryptionBackend]] = MappingProxyType(
-    {
-        1: v1.Encryptor,
-    }
+_EncryptionBackendFactory = Callable[[bytes, rsa.RSAPublicKey], EncryptionBackend]
+
+
+_ENCRYPTION_BACKEND_FACTORIES: Mapping[int, _EncryptionBackendFactory] = (
+    MappingProxyType(
+        {
+            1: v1.Encryptor,
+        }
+    )
 )
 
-_DECRYPTION_BACKENDS: Mapping[int, type[DecryptionBackend]] = MappingProxyType(
+_DECRYPTION_BACKEND_FACTORIES: Mapping[int, DecryptorBackendFactory] = MappingProxyType(
     {
-        # 1: v1.Decryptor,
+        1: v1.DecryptorFactory(),
     }
 )
 
@@ -34,8 +41,7 @@ class PublicKey:
     @raises(exceptions.KeyLoadingError)
     def load(cls, serialized_key: bytes) -> Self:
         public_key = serialization.load_pem_public_key(serialized_key)
-        if not isinstance(public_key, rsa.RSAPublicKey):
-            raise
+        assert isinstance(public_key, rsa.RSAPublicKey)
         return cls(public_key)
 
     @property
@@ -60,7 +66,8 @@ class PublicKey:
             raise ValueError(
                 f"Latest supported version is {constants.LATEST_KEK_VERSION}"
             )
-        return _ENCRYPTION_BACKENDS[version](self.key_id, self._key)
+        encryption_backend_factory = _ENCRYPTION_BACKEND_FACTORIES[version]
+        return encryption_backend_factory(self.key_id, self._key)
 
     @raises(exceptions.KeySerializationError)
     def serialize(self) -> bytes:
@@ -233,19 +240,14 @@ class KeyPair:
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, message: bytes) -> bytes:
-        algorithm_version = message[0]
-        if algorithm_version > constants.LATEST_KEK_VERSION:
-            raise exceptions.DecryptionError(
-                "Data is encrypted with unsupported version of algorithm ({})".format(
-                    algorithm_version
-                )
-            )
+        algorithm_version = helpers.extract_and_validate_algorithm_version(message)
+        self._validate_key_id(message)
 
-        encryption_key_id = message[constants.KEY_ID_SLICE]
-        if encryption_key_id != self.key_id:
-            raise exceptions.DecryptionError("Data is encrypted with different key")
-
-        decryptor = _DECRYPTION_BACKENDS[algorithm_version](self.key_id)
+        decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
+        decryptor = decryptor_factory.get_decryptor(
+            message, private_key=self._rsa_private_key
+        )
+        return decryptor.decrypt()
 
     def _create_signature(
         self,
@@ -260,3 +262,8 @@ class KeyPair:
             padding=constants.SIGNATURE_PADDING,
             algorithm=hash_algorithm,
         )
+
+    def _validate_key_id(self, message: bytes) -> None:
+        encryption_key_id = message[constants.KEY_ID_SLICE]
+        if encryption_key_id != self.key_id:
+            raise exceptions.DecryptionError("Data is encrypted with different key")
