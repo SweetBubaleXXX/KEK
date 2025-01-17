@@ -35,10 +35,10 @@ class StreamDecryptionBackend(metaclass=ABCMeta):
         self._private_key = private_key
 
     @abstractmethod
-    def decrypt(self) -> Iterator[bytes]: ...
+    def decrypt_stream(self) -> Iterator[bytes]: ...
 
 
-class DecryptorBackendFactory(metaclass=ABCMeta):
+class DecryptionBackendFactory(metaclass=ABCMeta):
     version: KekAlgorithmVersion
 
     @staticmethod

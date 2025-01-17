@@ -11,7 +11,7 @@ from kek import helpers
 
 from . import constants, exceptions
 from .backends import v1
-from .backends.decryption import DecryptorBackendFactory
+from .backends.decryption import DecryptionBackendFactory
 from .backends.encryption import EncryptionBackend
 from .exceptions import raises, raises_async
 
@@ -26,10 +26,12 @@ _ENCRYPTION_BACKEND_FACTORIES: Mapping[int, _EncryptionBackendFactory] = (
     )
 )
 
-_DECRYPTION_BACKEND_FACTORIES: Mapping[int, DecryptorBackendFactory] = MappingProxyType(
-    {
-        1: v1.DecryptorFactory(),
-    }
+_DECRYPTION_BACKEND_FACTORIES: Mapping[int, DecryptionBackendFactory] = (
+    MappingProxyType(
+        {
+            1: v1.DecryptorFactory(),
+        }
+    )
 )
 
 

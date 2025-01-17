@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kek import exceptions
+from kek import constants, exceptions
 from kek.backends import v1
 from tests.constants import SAMPLE_MESSAGE
 
@@ -90,3 +90,28 @@ def test_decryptor_decrypt_empty_data(v1_decryptor_factory):
     decryptor = v1_decryptor_factory(b"")
     with pytest.raises(exceptions.DecryptionError):
         decryptor.decrypt()
+
+
+def test_stream_decryptor_decrypt_message(
+    v1_stream_decryptor_factory, encrypted_message
+):
+    message_without_header = encrypted_message[constants.KEY_ID_SLICE.stop :]
+    decryptor = v1_stream_decryptor_factory(io.BytesIO(message_without_header))
+
+    decrypted_message = b"".join(decryptor.decrypt_stream())
+    assert decrypted_message == SAMPLE_MESSAGE
+
+
+def test_stream_decryptor_decrypt_invalid_length_stream(
+    v1_stream_decryptor_factory, encrypted_message
+):
+    broken_message = encrypted_message[constants.KEY_ID_SLICE.stop : -1]
+    decryptor = v1_stream_decryptor_factory(io.BytesIO(broken_message))
+    with pytest.raises(exceptions.DecryptionError):
+        next(decryptor.decrypt_stream())
+
+
+def test_stream_decryptor_decrypt_empty_stream(v1_stream_decryptor_factory):
+    decryptor = v1_stream_decryptor_factory(io.BytesIO(b""))
+    with pytest.raises(exceptions.DecryptionError):
+        next(decryptor.decrypt_stream())

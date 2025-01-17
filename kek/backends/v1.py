@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.padding import PKCS7
 
 from kek.backends.decryption import (
     DecryptionBackend,
-    DecryptorBackendFactory,
+    DecryptionBackendFactory,
     StreamDecryptionBackend,
 )
 
@@ -20,57 +20,6 @@ from .encryption import EncryptionBackend
 SYMMETRIC_KEY_LENGTH = 32
 SYMMETRIC_BLOCK_LENGTH = 16
 _SYMMETRIC_PADDING = PKCS7(SYMMETRIC_BLOCK_LENGTH * 8)
-
-
-def _add_padding(block: bytes) -> bytes:
-    padder = _SYMMETRIC_PADDING.padder()
-    return padder.update(block) + padder.finalize()
-
-
-def _remove_padding(block: bytes) -> bytes:
-    unpadder = _SYMMETRIC_PADDING.unpadder()
-    return unpadder.update(block) + unpadder.finalize()
-
-
-def _get_aes_cipher(symmetric_key: bytes, initialization_vector: bytes) -> Cipher:
-    """Return an AES cipher in CBC mode."""
-    return Cipher(
-        AES256(symmetric_key),
-        modes.CBC(initialization_vector),
-    )
-
-
-class _StreamEncryptionIterator:
-    def __init__(
-        self,
-        encryptor: CipherContext,
-        buffer: io.BufferedIOBase,
-        chunk_length: int,
-    ) -> None:
-        self._encryptor = encryptor
-        self._buffer = buffer
-        self._chunk_length = chunk_length
-
-        self._finalized = False
-
-    def __iter__(self) -> Self:
-        return self
-
-    @raises(exceptions.EncryptionError)
-    def __next__(self) -> bytes:
-        if self._finalized:
-            raise StopIteration("Encryption finalized")
-
-        chunk = self._buffer.read(self._chunk_length)
-        if len(chunk) == self._chunk_length:
-            return self._encryptor.update(chunk)
-
-        last_chunk = _add_padding(chunk)
-        encrypted_last_chunk = (
-            self._encryptor.update(last_chunk) + self._encryptor.finalize()
-        )
-        self._finalized = True
-        return encrypted_last_chunk
 
 
 class Encryptor(EncryptionBackend):
@@ -109,12 +58,42 @@ class Encryptor(EncryptionBackend):
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:
-        if chunk_length % SYMMETRIC_BLOCK_LENGTH:
-            raise exceptions.EncryptionError(
-                "Chunk length is not multiple of block length"
-            )
+        _validate_chunk_length(chunk_length)
         encryptor = self._cipher.encryptor()
         return _StreamEncryptionIterator(encryptor, buffer, chunk_length)
+
+
+class _StreamEncryptionIterator:
+    def __init__(
+        self,
+        encryptor: CipherContext,
+        buffer: io.BufferedIOBase,
+        chunk_length: int,
+    ) -> None:
+        self._encryptor = encryptor
+        self._buffer = buffer
+        self._chunk_length = chunk_length
+
+        self._finalized = False
+
+    def __iter__(self) -> Self:
+        return self
+
+    @raises(exceptions.EncryptionError)
+    def __next__(self) -> bytes:
+        if self._finalized:
+            raise StopIteration("Encryption finalized")
+
+        chunk = self._buffer.read(self._chunk_length)
+        if len(chunk) == self._chunk_length:
+            return self._encryptor.update(chunk)
+
+        last_chunk = _add_padding(chunk)
+        encrypted_last_chunk = (
+            self._encryptor.update(last_chunk) + self._encryptor.finalize()
+        )
+        self._finalized = True
+        return encrypted_last_chunk
 
 
 class Decryptor(DecryptionBackend):
@@ -122,16 +101,14 @@ class Decryptor(DecryptionBackend):
 
     def __init__(self, data: bytes, private_key: RSAPrivateKey) -> None:
         super().__init__(data, private_key)
-        self._metadata_length = self._private_key.key_size // 8
+        metadata_length = self._private_key.key_size // 8
         self._metadata_start_position = constants.KEY_ID_SLICE.stop
-        self._metadata_end_position = (
-            self._metadata_start_position + self._metadata_length
-        )
+        self._metadata_end_position = self._metadata_start_position + metadata_length
 
     @raises(exceptions.DecryptionError)
     def decrypt(self) -> bytes:
         decrypted_metadata = self._decrypt_metadata()
-        symmetric_cipher = self._create_cipher_from_metadata(decrypted_metadata)
+        symmetric_cipher = _create_cipher_from_metadata(decrypted_metadata)
         symmetric_decryptor = symmetric_cipher.decryptor()
         decrypted_data = (
             symmetric_decryptor.update(self._data[self._metadata_end_position :])
@@ -149,26 +126,84 @@ class Decryptor(DecryptionBackend):
             constants.ASYMMETRIC_ENCRYPTION_PADDING,
         )
 
-    def _create_cipher_from_metadata(self, decrypted_metadata: bytes) -> Cipher:
-        symmetric_key = decrypted_metadata[:SYMMETRIC_KEY_LENGTH]
-        initialization_vector = decrypted_metadata[SYMMETRIC_KEY_LENGTH:]
-
-        return _get_aes_cipher(symmetric_key, initialization_vector)
-
 
 class StreamDecryptor(StreamDecryptionBackend):
-    pass
+    def __init__(self, buffer: io.BufferedIOBase, private_key: RSAPrivateKey) -> None:
+        super().__init__(buffer, private_key)
+        self._cipher: Cipher | None = None
+
+    @raises(exceptions.DecryptionError)
+    def decrypt_stream(
+        self, *, chunk_length: int = constants.CHUNK_LENGTH
+    ) -> Iterator[bytes]:
+        _validate_chunk_length(chunk_length)
+
+        if not self._cipher:
+            self._decrypt_metadata()
+        assert self._cipher
+
+        decryptor = self._cipher.decryptor()
+
+        current_chunk = self._buffer.read(chunk_length)
+        next_chunk = self._buffer.read(chunk_length)
+        decrypted_chunk = decryptor.update(current_chunk) + decryptor.finalize()
+
+        if next_chunk:
+            yield decrypted_chunk
+        else:
+            yield _remove_padding(decrypted_chunk)
+
+    @raises(exceptions.DecryptionError)
+    def _decrypt_metadata(self) -> None:
+        metadata_length = self._private_key.key_size // 8
+        encrypted_metadata = self._buffer.read(metadata_length)
+
+        decrypted_metadata = self._private_key.decrypt(
+            encrypted_metadata,
+            constants.ASYMMETRIC_ENCRYPTION_PADDING,
+        )
+        self._cipher = _create_cipher_from_metadata(decrypted_metadata)
 
 
-class DecryptorFactory(DecryptorBackendFactory):
+class DecryptorFactory(DecryptionBackendFactory):
     version = 1
 
     @staticmethod
-    def get_decryptor(data: bytes, private_key: RSAPrivateKey) -> Decryptor:
+    def get_decryptor(data: bytes, *, private_key: RSAPrivateKey) -> Decryptor:
         return Decryptor(data, private_key)
 
     @staticmethod
     def get_stream_decryptor(
-        buffer: io.BufferedIOBase, private_key: RSAPrivateKey
+        buffer: io.BufferedIOBase, *, private_key: RSAPrivateKey
     ) -> StreamDecryptor:
-        pass
+        return StreamDecryptor(buffer, private_key)
+
+
+def _validate_chunk_length(chunk_length: int) -> None:
+    if chunk_length % SYMMETRIC_BLOCK_LENGTH:
+        raise exceptions.EncryptionError("Chunk length is not multiple of block length")
+
+
+def _add_padding(block: bytes) -> bytes:
+    padder = _SYMMETRIC_PADDING.padder()
+    return padder.update(block) + padder.finalize()
+
+
+def _remove_padding(block: bytes) -> bytes:
+    unpadder = _SYMMETRIC_PADDING.unpadder()
+    return unpadder.update(block) + unpadder.finalize()
+
+
+def _create_cipher_from_metadata(metadata: bytes) -> Cipher:
+    symmetric_key = metadata[:SYMMETRIC_KEY_LENGTH]
+    initialization_vector = metadata[SYMMETRIC_KEY_LENGTH:]
+
+    return _get_aes_cipher(symmetric_key, initialization_vector)
+
+
+def _get_aes_cipher(symmetric_key: bytes, initialization_vector: bytes) -> Cipher:
+    """Return an AES cipher in CBC mode."""
+    return Cipher(
+        AES256(symmetric_key),
+        modes.CBC(initialization_vector),
+    )
