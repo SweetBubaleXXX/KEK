@@ -128,33 +128,17 @@ class Decryptor(DecryptionBackend):
 
 
 class StreamDecryptor(StreamDecryptionBackend):
-    def __init__(self, buffer: io.BufferedIOBase, private_key: RSAPrivateKey) -> None:
-        super().__init__(buffer, private_key)
-        self._cipher: Cipher | None = None
-
     @raises(exceptions.DecryptionError)
     def decrypt_stream(
         self, *, chunk_length: int = constants.CHUNK_LENGTH
     ) -> Iterator[bytes]:
         _validate_chunk_length(chunk_length)
-
-        if not self._cipher:
-            self._decrypt_metadata()
-        assert self._cipher
-
-        decryptor = self._cipher.decryptor()
-
-        current_chunk = self._buffer.read(chunk_length)
-        next_chunk = self._buffer.read(chunk_length)
-        decrypted_chunk = decryptor.update(current_chunk) + decryptor.finalize()
-
-        if next_chunk:
-            yield decrypted_chunk
-        else:
-            yield _remove_padding(decrypted_chunk)
+        cipher = self._decrypt_metadata()
+        decryptor = cipher.decryptor()
+        return _StreamDecryptionIterator(decryptor, self._buffer, chunk_length)
 
     @raises(exceptions.DecryptionError)
-    def _decrypt_metadata(self) -> None:
+    def _decrypt_metadata(self) -> Cipher:
         metadata_length = self._private_key.key_size // 8
         encrypted_metadata = self._buffer.read(metadata_length)
 
@@ -162,7 +146,39 @@ class StreamDecryptor(StreamDecryptionBackend):
             encrypted_metadata,
             constants.ASYMMETRIC_ENCRYPTION_PADDING,
         )
-        self._cipher = _create_cipher_from_metadata(decrypted_metadata)
+        return _create_cipher_from_metadata(decrypted_metadata)
+
+
+class _StreamDecryptionIterator:
+    def __init__(
+        self,
+        decryptor: CipherContext,
+        buffer: io.BufferedIOBase,
+        chunk_length: int,
+    ) -> None:
+        self._decryptor = decryptor
+        self._buffer = buffer
+        self._chunk_length = chunk_length
+
+        self._next_chunk: bytes | None = None
+
+    def __iter__(self) -> Self:
+        return self
+
+    @raises(exceptions.DecryptionError)
+    def __next__(self) -> bytes:
+        current_chunk = self._next_chunk or self._buffer.read(self._chunk_length)
+        self._next_chunk = self._buffer.read(self._chunk_length)
+
+        if not current_chunk:
+            raise StopIteration("All chunks are processed")
+
+        decrypted_chunk = self._decryptor.update(current_chunk)
+
+        if not self._next_chunk:
+            final_chunk = decrypted_chunk + self._decryptor.finalize()
+            return _remove_padding(final_chunk)
+        return decrypted_chunk
 
 
 class DecryptorFactory(DecryptionBackendFactory):
@@ -181,7 +197,7 @@ class DecryptorFactory(DecryptionBackendFactory):
 
 def _validate_chunk_length(chunk_length: int) -> None:
     if chunk_length % SYMMETRIC_BLOCK_LENGTH:
-        raise exceptions.EncryptionError("Chunk length is not multiple of block length")
+        raise exceptions.KekException("Chunk length is not multiple of block length")
 
 
 def _add_padding(block: bytes) -> bytes:

@@ -102,6 +102,18 @@ def test_stream_decryptor_decrypt_message(
     assert decrypted_message == SAMPLE_MESSAGE
 
 
+def test_stream_decryptor_decrypt_custom_chunk_length(
+    v1_stream_decryptor_factory, encrypted_message
+):
+    message_without_header = encrypted_message[constants.KEY_ID_SLICE.stop :]
+    decryptor = v1_stream_decryptor_factory(io.BytesIO(message_without_header))
+
+    decrypted_message = b"".join(
+        decryptor.decrypt_stream(chunk_length=v1.SYMMETRIC_BLOCK_LENGTH)
+    )
+    assert decrypted_message == SAMPLE_MESSAGE
+
+
 def test_stream_decryptor_decrypt_invalid_length_stream(
     v1_stream_decryptor_factory, encrypted_message
 ):
