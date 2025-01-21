@@ -16,7 +16,7 @@ class EncryptionBackend(metaclass=ABCMeta):
         self._public_key = public_key
 
     def get_header(self) -> bytes:
-        return self.version.to_bytes() + self._key_id
+        return self.version.to_bytes(1, "big") + self._key_id
 
     @abstractmethod
     def get_metadata(self) -> bytes: ...

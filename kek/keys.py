@@ -1,7 +1,7 @@
 from functools import cached_property
 from io import BufferedIOBase
 from types import MappingProxyType
-from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping, Self
+from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -42,7 +42,7 @@ class PublicKey:
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls, serialized_key: bytes) -> Self:
+    def load(cls, serialized_key: bytes) -> "PublicKey":
         public_key = serialization.load_pem_public_key(serialized_key)
         assert isinstance(public_key, rsa.RSAPublicKey)
         return cls(public_key)
@@ -158,7 +158,7 @@ class KeyPair:
 
     @classmethod
     @raises(exceptions.KeyGenerationError)
-    def generate(cls, key_size: constants.KeySize) -> Self:
+    def generate(cls, key_size: constants.KeySize) -> "KeyPair":
         if key_size not in constants.SUPPORTED_KEY_SIZES:
             raise ValueError("Invalid key size")
         rsa_private_key = rsa.generate_private_key(
@@ -169,7 +169,7 @@ class KeyPair:
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
-    def load(cls, serialized_key: bytes, *, password: bytes | None = None) -> Self:
+    def load(cls, serialized_key: bytes, *, password: bytes | None = None) -> "KeyPair":
         private_key = serialization.load_pem_private_key(serialized_key, password)
         if not isinstance(private_key, rsa.RSAPrivateKey):
             raise exceptions.KeyLoadingError("Not RSA private key")
