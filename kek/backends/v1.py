@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Iterator, Self
+from typing import Iterator
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.ciphers import Cipher, CipherContext, modes
@@ -76,7 +76,7 @@ class _StreamEncryptionIterator:
 
         self._finalized = False
 
-    def __iter__(self) -> Self:
+    def __iter__(self) -> "_StreamEncryptionIterator":
         return self
 
     @raises(exceptions.EncryptionError)
@@ -161,7 +161,7 @@ class _StreamDecryptionIterator:
 
         self._next_chunk: bytes | None = None
 
-    def __iter__(self) -> Self:
+    def __iter__(self) -> "_StreamDecryptionIterator":
         return self
 
     @raises(exceptions.DecryptionError)
