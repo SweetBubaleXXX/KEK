@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, utils
 
 from kek import helpers
+from kek.utils import PreprocessedEncryptedStream
 
 from . import constants, exceptions
 from .backends import v1
@@ -242,8 +243,9 @@ class KeyPair:
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, message: bytes) -> bytes:
-        algorithm_version = helpers.extract_and_validate_algorithm_version(message)
-        self._validate_key_id(message)
+        algorithm_version = message[0]
+        helpers.validate_supported_algorithm_version(algorithm_version)
+        self._validate_key_id(message[constants.KEY_ID_SLICE])
 
         decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
         decryptor = decryptor_factory.get_decryptor(
@@ -253,11 +255,21 @@ class KeyPair:
 
     @raises(exceptions.DecryptionError)
     def decrypt_stream(
-        self, message: BufferedIOBase, *, chunk_length: int = constants.CHUNK_LENGTH
+        self,
+        message: BufferedIOBase | PreprocessedEncryptedStream,
+        *,
+        chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:
-        header = message.read(constants.KEY_ID_SLICE.stop)
-        algorithm_version = helpers.extract_and_validate_algorithm_version(header)
-        self._validate_key_id(header)
+        if isinstance(message, PreprocessedEncryptedStream):
+            algorithm_version = message.algorithm_version
+            key_id = message.key_id
+        else:
+            header = message.read(constants.KEY_ID_SLICE.stop)
+            algorithm_version = header[0]
+            key_id = header[constants.KEY_ID_SLICE]
+
+        helpers.validate_supported_algorithm_version(algorithm_version)
+        self._validate_key_id(key_id)
 
         decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
         stream_decryptor = decryptor_factory.get_stream_decryptor(
@@ -279,7 +291,6 @@ class KeyPair:
             algorithm=hash_algorithm,
         )
 
-    def _validate_key_id(self, message: bytes) -> None:
-        encryption_key_id = message[constants.KEY_ID_SLICE]
+    def _validate_key_id(self, encryption_key_id: bytes) -> None:
         if encryption_key_id != self.key_id:
             raise exceptions.DecryptionError("Data is encrypted with different key")

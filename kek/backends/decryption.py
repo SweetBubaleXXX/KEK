@@ -15,10 +15,6 @@ class DecryptionBackend(metaclass=ABCMeta):
         self._data = data
         self._private_key = private_key
 
-    @property
-    def key_id(self) -> bytes:
-        return self._data[constants.KEY_ID_SLICE]
-
     @abstractmethod
     def decrypt(self) -> bytes: ...
 

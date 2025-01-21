@@ -4,6 +4,7 @@ import pytest
 
 from kek import KeyPair, exceptions
 from kek.constants import KEY_ID_SLICE, LATEST_KEK_VERSION, SUPPORTED_KEY_SIZES
+from kek.utils import preprocess_encrypted_stream
 
 from .helpers import async_iterator
 
@@ -115,10 +116,17 @@ def test_decrypt_unsupported_version(key_pair, encrypted_message):
         assert "unsupported version" in exc_info.value.args[0]
 
 
-def test_decrypt_stream(key_pair, encrypted_message, sample_message):
-    buffer = io.BytesIO(encrypted_message)
-    decryption_iterator = key_pair.decrypt_stream(buffer)
+def test_decrypt_stream(key_pair, encrypted_stream, sample_message):
+    decryption_iterator = key_pair.decrypt_stream(encrypted_stream)
     decrypted_message = b"".join(decryption_iterator)
+    assert decrypted_message == sample_message
+
+
+def test_decrypt_preprocessed_stream(key_pair, encrypted_file_path, sample_message):
+    with open(encrypted_file_path, "rb", buffering=0) as f:
+        preprocessed_stream = preprocess_encrypted_stream(f)
+        decryption_iterator = key_pair.decrypt_stream(preprocessed_stream)
+        decrypted_message = b"".join(decryption_iterator)
     assert decrypted_message == sample_message
 
 
