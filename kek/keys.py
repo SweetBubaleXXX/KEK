@@ -190,7 +190,9 @@ class KeyPair:
     @raises(exceptions.KeySerializationError)
     def serialize(self, *, password: bytes | None = None) -> bytes:
         if password:
-            encryption_algorithm = serialization.BestAvailableEncryption(password)
+            encryption_algorithm: serialization.KeySerializationEncryption = (
+                serialization.BestAvailableEncryption(password)
+            )
         else:
             encryption_algorithm = serialization.NoEncryption()
         return self._rsa_private_key.private_bytes(
