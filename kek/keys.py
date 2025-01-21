@@ -1,7 +1,7 @@
 from functools import cached_property
 from io import BufferedIOBase
 from types import MappingProxyType
-from typing import AsyncIterable, Callable, Iterable, Mapping, Self
+from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping, Self
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -250,6 +250,20 @@ class KeyPair:
             message, private_key=self._rsa_private_key
         )
         return decryptor.decrypt()
+
+    @raises(exceptions.DecryptionError)
+    def decrypt_stream(
+        self, message: BufferedIOBase, *, chunk_length: int = constants.CHUNK_LENGTH
+    ) -> Iterator[bytes]:
+        header = message.read(constants.KEY_ID_SLICE.stop)
+        algorithm_version = helpers.extract_and_validate_algorithm_version(header)
+        self._validate_key_id(header)
+
+        decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
+        stream_decryptor = decryptor_factory.get_stream_decryptor(
+            message, private_key=self._rsa_private_key
+        )
+        return stream_decryptor.decrypt_stream(chunk_length=chunk_length)
 
     def _create_signature(
         self,

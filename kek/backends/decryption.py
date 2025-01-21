@@ -35,7 +35,11 @@ class StreamDecryptionBackend(metaclass=ABCMeta):
         self._private_key = private_key
 
     @abstractmethod
-    def decrypt_stream(self) -> Iterator[bytes]: ...
+    def decrypt_stream(
+        self,
+        *,
+        chunk_length: int = constants.CHUNK_LENGTH,
+    ) -> Iterator[bytes]: ...
 
 
 class DecryptionBackendFactory(metaclass=ABCMeta):

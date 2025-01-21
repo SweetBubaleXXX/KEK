@@ -133,20 +133,19 @@ class StreamDecryptor(StreamDecryptionBackend):
         self, *, chunk_length: int = constants.CHUNK_LENGTH
     ) -> Iterator[bytes]:
         _validate_chunk_length(chunk_length)
-        cipher = self._decrypt_metadata()
-        decryptor = cipher.decryptor()
-        return _StreamDecryptionIterator(decryptor, self._buffer, chunk_length)
+        decrypted_metadata = self._decrypt_metadata()
+        cipher = _create_cipher_from_metadata(decrypted_metadata)
+        return _StreamDecryptionIterator(cipher.decryptor(), self._buffer, chunk_length)
 
     @raises(exceptions.DecryptionError)
-    def _decrypt_metadata(self) -> Cipher:
+    def _decrypt_metadata(self) -> bytes:
         metadata_length = self._private_key.key_size // 8
         encrypted_metadata = self._buffer.read(metadata_length)
 
-        decrypted_metadata = self._private_key.decrypt(
+        return self._private_key.decrypt(
             encrypted_metadata,
             constants.ASYMMETRIC_ENCRYPTION_PADDING,
         )
-        return _create_cipher_from_metadata(decrypted_metadata)
 
 
 class _StreamDecryptionIterator:

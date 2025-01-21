@@ -1,3 +1,5 @@
+import io
+
 import pytest
 
 from kek import KeyPair, exceptions
@@ -110,4 +112,31 @@ def test_decrypt_unsupported_version(key_pair, encrypted_message):
     )
     with pytest.raises(exceptions.DecryptionError) as exc_info:
         key_pair.decrypt(message_with_unsupported_version)
+        assert "unsupported version" in exc_info.value.args[0]
+
+
+def test_decrypt_stream(key_pair, encrypted_message, sample_message):
+    buffer = io.BytesIO(encrypted_message)
+    decryption_iterator = key_pair.decrypt_stream(buffer)
+    decrypted_message = b"".join(decryption_iterator)
+    assert decrypted_message == sample_message
+
+
+def test_decrypt_stream_different_key_id(key_pair, encrypted_message):
+    message_with_different_id = bytearray(encrypted_message)
+    message_with_different_id[KEY_ID_SLICE] = b"12345678"
+    buffer = io.BytesIO(message_with_different_id)
+    with pytest.raises(exceptions.DecryptionError) as exc_info:
+        key_pair.decrypt_stream(buffer)
+        assert "different key" in exc_info.value.args[0]
+
+
+def test_decrypt_stream_unsupported_version(key_pair, encrypted_message):
+    unsupported_version = LATEST_KEK_VERSION + 1
+    message_with_unsupported_version = (
+        unsupported_version.to_bytes() + encrypted_message[1:]
+    )
+    buffer = io.BytesIO(message_with_unsupported_version)
+    with pytest.raises(exceptions.DecryptionError) as exc_info:
+        key_pair.decrypt_stream(buffer)
         assert "unsupported version" in exc_info.value.args[0]
