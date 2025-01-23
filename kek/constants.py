@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum
 from typing import Literal
 
 from cryptography.hazmat.primitives import hashes, serialization
@@ -41,7 +41,7 @@ SIGNATURE_HASH_ALGORITHM = hashes.SHA256()
 CHUNK_LENGTH = 1024 * 1024
 
 
-class SerializedKeyType(StrEnum):
+class SerializedKeyType(Enum):
     PUBLIC_KEY = "PUBLIC KEY"
     PRIVATE_KEY = "PRIVATE KEY"
     ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY"
