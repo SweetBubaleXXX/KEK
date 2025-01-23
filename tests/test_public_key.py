@@ -40,7 +40,7 @@ def test_verify_stream(
 
 
 def test_verify_iterable(message_signature, sample_message, public_key):
-    iterator = map(int.to_bytes, sample_message)
+    iterator = map(lambda char: char.to_bytes(1, "big"), sample_message)
     assert public_key.verify_iterable(message_signature, iterable=iterator)
     with pytest.raises(StopIteration):
         next(iterator)
