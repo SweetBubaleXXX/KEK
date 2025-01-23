@@ -1,10 +1,17 @@
 import pytest
 
 from kek import exceptions
+from kek.constants import SerializedKeyType
 from kek.utils import (
     PreprocessedEncryptedStream,
     extract_key_id,
+    get_key_type,
     preprocess_encrypted_stream,
+)
+from tests.constants import (
+    ENCRYPTED_PRIVATE_KEY,
+    SERIALIZED_PRIVATE_KEY,
+    SERIALIZED_PUBLIC_KEY,
 )
 
 
@@ -33,3 +40,17 @@ def test_preprocess_empty_stream(empty_file_path):
 def test_extract_key_id(encrypted_message, key_id):
     extracted_key_id = extract_key_id(encrypted_message)
     assert extracted_key_id == key_id
+
+
+@pytest.mark.parametrize(
+    ("serialized_key", "expected_type"),
+    [
+        (SERIALIZED_PUBLIC_KEY, SerializedKeyType.PUBLIC_KEY),
+        (SERIALIZED_PRIVATE_KEY, SerializedKeyType.PRIVATE_KEY),
+        (ENCRYPTED_PRIVATE_KEY, SerializedKeyType.ENCRYPTED_PRIVATE_KEY),
+        (b"unknown_key", SerializedKeyType.UNKNOWN),
+    ],
+)
+def test_get_key_type(serialized_key, expected_type):
+    key_type = get_key_type(serialized_key)
+    assert key_type == expected_type

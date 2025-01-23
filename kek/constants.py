@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Literal
 
 from cryptography.hazmat.primitives import hashes, serialization
@@ -38,3 +39,10 @@ SIGNATURE_PADDING = padding.PSS(
 SIGNATURE_HASH_ALGORITHM = hashes.SHA256()
 
 CHUNK_LENGTH = 1024 * 1024
+
+
+class SerializedKeyType(StrEnum):
+    PUBLIC_KEY = "PUBLIC KEY"
+    PRIVATE_KEY = "PRIVATE KEY"
+    ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY"
+    UNKNOWN = "UNKNOWN"

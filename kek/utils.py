@@ -44,3 +44,13 @@ def preprocess_encrypted_stream(raw_stream: RawIOBase) -> PreprocessedEncryptedS
 
 def extract_key_id(encrypted_message: bytes) -> bytes:
     return encrypted_message[constants.KEY_ID_SLICE]
+
+
+def get_key_type(serialized_key: bytes) -> constants.SerializedKeyType:
+    if serialized_key.startswith(b"-----BEGIN PUBLIC KEY-----"):
+        return constants.SerializedKeyType.PUBLIC_KEY
+    elif serialized_key.startswith(b"-----BEGIN PRIVATE KEY-----"):
+        return constants.SerializedKeyType.PRIVATE_KEY
+    elif serialized_key.startswith(b"-----BEGIN ENCRYPTED PRIVATE KEY-----"):
+        return constants.SerializedKeyType.ENCRYPTED_PRIVATE_KEY
+    return constants.SerializedKeyType.UNKNOWN

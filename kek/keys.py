@@ -5,10 +5,11 @@ from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, utils
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
 
-from kek import helpers
-from kek.utils import PreprocessedEncryptedStream, extract_key_id
+from kek import helpers, utils
+from kek.utils import PreprocessedEncryptedStream
 
 from . import constants, exceptions
 from .backends import v1
@@ -43,8 +44,12 @@ class PublicKey:
     @classmethod
     @raises(exceptions.KeyLoadingError)
     def load(cls, serialized_key: bytes) -> "PublicKey":
+        key_type = utils.get_key_type(serialized_key)
+        assert key_type == constants.SerializedKeyType.PUBLIC_KEY, "Not a public key"
+
         public_key = serialization.load_pem_public_key(serialized_key)
-        assert isinstance(public_key, rsa.RSAPublicKey)
+        assert isinstance(public_key, rsa.RSAPublicKey), "Not an RSA public key"
+
         return cls(public_key)
 
     @property
@@ -98,7 +103,7 @@ class PublicKey:
         return self._signature_is_valid(
             signature,
             message=digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     @raises(exceptions.VerificationError)
@@ -110,7 +115,7 @@ class PublicKey:
         return self._signature_is_valid(
             signature,
             message=digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     @raises_async(exceptions.VerificationError)
@@ -127,7 +132,7 @@ class PublicKey:
         return self._signature_is_valid(
             signature,
             message=digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     def _signature_is_valid(
@@ -136,7 +141,7 @@ class PublicKey:
         *,
         message: bytes,
         hash_algorithm: (
-            utils.Prehashed | hashes.HashAlgorithm
+            Prehashed | hashes.HashAlgorithm
         ) = constants.SIGNATURE_HASH_ALGORITHM,
     ) -> bool:
         try:
@@ -170,9 +175,15 @@ class KeyPair:
     @classmethod
     @raises(exceptions.KeyLoadingError)
     def load(cls, serialized_key: bytes, *, password: bytes | None = None) -> "KeyPair":
+        key_type = utils.get_key_type(serialized_key)
+        assert key_type in (
+            constants.SerializedKeyType.PRIVATE_KEY,
+            constants.SerializedKeyType.ENCRYPTED_PRIVATE_KEY,
+        ), "Not a private key"
+
         private_key = serialization.load_pem_private_key(serialized_key, password)
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise exceptions.KeyLoadingError("Not RSA private key")
+        assert isinstance(private_key, rsa.RSAPrivateKey), "Not an RSA private key"
+
         return cls(private_key)
 
     @property
@@ -218,7 +229,7 @@ class KeyPair:
         digest = hasher.finalize()
         return self._create_signature(
             digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     @raises(exceptions.SigningError)
@@ -229,7 +240,7 @@ class KeyPair:
         digest = hasher.finalize()
         return self._create_signature(
             digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     @raises_async(exceptions.SigningError)
@@ -240,14 +251,14 @@ class KeyPair:
         digest = hasher.finalize()
         return self._create_signature(
             digest,
-            hash_algorithm=utils.Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
+            hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
     @raises(exceptions.DecryptionError)
     def decrypt(self, message: bytes) -> bytes:
         algorithm_version = message[0]
         helpers.validate_supported_algorithm_version(algorithm_version)
-        encryption_key_id = extract_key_id(message)
+        encryption_key_id = utils.extract_key_id(message)
         self._validate_key_id(encryption_key_id)
 
         decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
@@ -269,7 +280,7 @@ class KeyPair:
         else:
             header = message.read(constants.KEY_ID_SLICE.stop)
             algorithm_version = header[0]
-            key_id = extract_key_id(header)
+            key_id = utils.extract_key_id(header)
 
         helpers.validate_supported_algorithm_version(algorithm_version)
         self._validate_key_id(key_id)
@@ -285,7 +296,7 @@ class KeyPair:
         message: bytes,
         *,
         hash_algorithm: (
-            utils.Prehashed | hashes.HashAlgorithm
+            Prehashed | hashes.HashAlgorithm
         ) = constants.SIGNATURE_HASH_ALGORITHM,
     ) -> bytes:
         return self._rsa_private_key.sign(
