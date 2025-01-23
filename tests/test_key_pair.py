@@ -109,7 +109,7 @@ def test_decrypt_different_key_id(key_pair, encrypted_message):
 def test_decrypt_unsupported_version(key_pair, encrypted_message):
     unsupported_version = LATEST_KEK_VERSION + 1
     message_with_unsupported_version = (
-        unsupported_version.to_bytes() + encrypted_message[1:]
+        unsupported_version.to_bytes(1, "big") + encrypted_message[1:]
     )
     with pytest.raises(exceptions.DecryptionError) as exc_info:
         key_pair.decrypt(message_with_unsupported_version)
@@ -142,7 +142,7 @@ def test_decrypt_stream_different_key_id(key_pair, encrypted_message):
 def test_decrypt_stream_unsupported_version(key_pair, encrypted_message):
     unsupported_version = LATEST_KEK_VERSION + 1
     message_with_unsupported_version = (
-        unsupported_version.to_bytes() + encrypted_message[1:]
+        unsupported_version.to_bytes(1, "big") + encrypted_message[1:]
     )
     buffer = io.BytesIO(message_with_unsupported_version)
     with pytest.raises(exceptions.DecryptionError) as exc_info:
