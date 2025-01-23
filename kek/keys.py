@@ -291,6 +291,13 @@ class KeyPair:
         )
         return stream_decryptor.decrypt_stream(chunk_length=chunk_length)
 
+    def __contains__(self, obj: object) -> bool:
+        if isinstance(obj, PublicKey):
+            return obj.key_id == self.key_id
+        elif isinstance(obj, bytes):
+            return obj == self.key_id
+        return False
+
     def _create_signature(
         self,
         message: bytes,

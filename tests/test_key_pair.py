@@ -148,3 +148,17 @@ def test_decrypt_stream_unsupported_version(key_pair, encrypted_message):
     with pytest.raises(exceptions.DecryptionError) as exc_info:
         key_pair.decrypt_stream(buffer)
         assert "unsupported version" in exc_info.value.args[0]
+
+
+def test_contains_public_key(key_pair, public_key):
+    assert public_key in key_pair
+
+
+def test_contains_public_key_with_different_id(key_pair):
+    another_key_pair = KeyPair.generate(2048)
+    public_key = another_key_pair.public_key
+    assert public_key not in key_pair
+
+
+def test_contains_raw_key_id(key_pair, key_id):
+    assert key_id in key_pair
