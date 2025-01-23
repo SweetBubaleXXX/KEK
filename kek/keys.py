@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, utils
 
 from kek import helpers
-from kek.utils import PreprocessedEncryptedStream
+from kek.utils import PreprocessedEncryptedStream, extract_key_id
 
 from . import constants, exceptions
 from .backends import v1
@@ -247,7 +247,8 @@ class KeyPair:
     def decrypt(self, message: bytes) -> bytes:
         algorithm_version = message[0]
         helpers.validate_supported_algorithm_version(algorithm_version)
-        self._validate_key_id(message[constants.KEY_ID_SLICE])
+        encryption_key_id = extract_key_id(message)
+        self._validate_key_id(encryption_key_id)
 
         decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
         decryptor = decryptor_factory.get_decryptor(
@@ -268,7 +269,7 @@ class KeyPair:
         else:
             header = message.read(constants.KEY_ID_SLICE.stop)
             algorithm_version = header[0]
-            key_id = header[constants.KEY_ID_SLICE]
+            key_id = extract_key_id(header)
 
         helpers.validate_supported_algorithm_version(algorithm_version)
         self._validate_key_id(key_id)
@@ -294,5 +295,6 @@ class KeyPair:
         )
 
     def _validate_key_id(self, encryption_key_id: bytes) -> None:
+        """Check if encryption key id matches current key id."""
         if encryption_key_id != self.key_id:
             raise exceptions.DecryptionError("Data is encrypted with different key")

@@ -1,7 +1,11 @@
 import pytest
 
 from kek import exceptions
-from kek.utils import PreprocessedEncryptedStream, preprocess_encrypted_stream
+from kek.utils import (
+    PreprocessedEncryptedStream,
+    extract_key_id,
+    preprocess_encrypted_stream,
+)
 
 
 @pytest.fixture()
@@ -24,3 +28,8 @@ def test_preprocess_empty_stream(empty_file_path):
     with open(empty_file_path, "rb", buffering=0) as f:
         with pytest.raises(exceptions.DecryptionError):
             preprocess_encrypted_stream(f)
+
+
+def test_extract_key_id(encrypted_message, key_id):
+    extracted_key_id = extract_key_id(encrypted_message)
+    assert extracted_key_id == key_id

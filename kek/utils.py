@@ -1,6 +1,6 @@
 from io import BufferedReader, RawIOBase
 
-from kek import exceptions
+from kek import constants, exceptions
 from kek.constants import KEY_ID_LENGTH
 from kek.exceptions import raises
 
@@ -40,3 +40,7 @@ def preprocess_encrypted_stream(raw_stream: RawIOBase) -> PreprocessedEncryptedS
         algorithm_version=algorithm_version,
         key_id=key_id,
     )
+
+
+def extract_key_id(encrypted_message: bytes) -> bytes:
+    return encrypted_message[constants.KEY_ID_SLICE]
