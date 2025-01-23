@@ -13,11 +13,17 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 cryptography = ">=40,<43"
+cffi = "^1.17"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.1"
 pytest-asyncio = "^0.23.5"
+mypy = "^1.14.1"
+black = "^24.10.0"
+flake8 = "^7.1.1"
+isort = "^5.13.2"
+pytest-cov = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]
