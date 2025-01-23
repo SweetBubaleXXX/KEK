@@ -3,9 +3,9 @@ profile = "black"
 
 
 [tool.poetry]
-name = "gnukek"
+name = "kek"
 version = "2.0.0a0"
-description = "Kinetic Encryption Key"
+description = "Key Encryption Key"
 authors = ["SweetBubaleXXX <70811772+SweetBubaleXXX@users.noreply.github.com>"]
 license = "GPL-3.0-only"
 readme = "README.md"
