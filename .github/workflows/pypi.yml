@@ -62,14 +62,24 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
+      - name: Determine if pre-release
+        id: prerelease
+        run: |
+          # Match pre-release identifiers in Python versioning: a, b, rc
+          if [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+(\.[0-9]+)*[a-z]+[0-9]+$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_ENV
+          else
+            echo "is_prerelease=false" >> $GITHUB_ENV
+          fi
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create
-          "$GITHUB_REF_NAME"
-          --repo "$GITHUB_REPOSITORY"
-          --notes ""
+        run: |
+          if [ "$is_prerelease" == "true" ]; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --notes "" --prerelease
+          else
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --notes ""
+          fi
       - name: Upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
