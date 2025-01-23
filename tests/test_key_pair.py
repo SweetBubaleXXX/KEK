@@ -150,6 +150,16 @@ def test_decrypt_stream_unsupported_version(key_pair, encrypted_message):
         assert "unsupported version" in exc_info.value.args[0]
 
 
+def test_eq(key_pair, serialized_private_key):
+    another_key_object = key_pair.load(serialized_private_key)
+    assert another_key_object == key_pair
+
+
+def test_eq_invalid_type(key_pair):
+    with pytest.raises(TypeError):
+        _ = 123 == key_pair
+
+
 def test_contains_public_key(key_pair, public_key):
     assert public_key in key_pair
 
@@ -162,3 +172,8 @@ def test_contains_public_key_with_different_id(key_pair):
 
 def test_contains_raw_key_id(key_pair, key_id):
     assert key_id in key_pair
+
+
+def test_contains_invalid_type(key_pair):
+    with pytest.raises(TypeError):
+        _ = 123 in key_pair

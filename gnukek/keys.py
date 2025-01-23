@@ -1,4 +1,3 @@
-from functools import cached_property
 from io import BufferedIOBase
 from types import MappingProxyType
 from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping
@@ -38,8 +37,11 @@ _DECRYPTION_BACKEND_FACTORIES: Mapping[int, DecryptionBackendFactory] = (
 
 
 class PublicKey:
+    __slots__ = ("_key", "_key_id")
+
     def __init__(self, key: rsa.RSAPublicKey) -> None:
         self._key = key
+        self._key_id: bytes | None = None
 
     @classmethod
     @raises(exceptions.KeyLoadingError)
@@ -56,14 +58,13 @@ class PublicKey:
     def key_size(self) -> int:
         return self._key.key_size
 
-    @cached_property
+    @property
     @raises(exceptions.KekException, "Failed to compute key id")
     def key_id(self) -> bytes:
-        hasher = hashes.Hash(constants.KEY_ID_HASH_ALGORITHM)
-        serialized_key = self.serialize()
-        hasher.update(serialized_key)
-        digest = hasher.finalize()
-        return digest[: constants.KEY_ID_LENGTH]
+        if not self._key_id:
+            self._key_id = self._compute_key_id()
+
+        return self._key_id
 
     def get_encryptor(
         self,
@@ -135,6 +136,13 @@ class PublicKey:
             hash_algorithm=Prehashed(constants.SIGNATURE_HASH_ALGORITHM),
         )
 
+    def _compute_key_id(self) -> bytes:
+        hasher = hashes.Hash(constants.KEY_ID_HASH_ALGORITHM)
+        serialized_key = self.serialize()
+        hasher.update(serialized_key)
+        digest = hasher.finalize()
+        return digest[: constants.KEY_ID_LENGTH]
+
     def _signature_is_valid(
         self,
         signature: bytes,
@@ -157,6 +165,8 @@ class PublicKey:
 
 
 class KeyPair:
+    __slots__ = ("_rsa_private_key", "_public_key")
+
     def __init__(self, private_key: rsa.RSAPrivateKey) -> None:
         self._rsa_private_key = private_key
         self._public_key = PublicKey(private_key.public_key())
@@ -291,12 +301,17 @@ class KeyPair:
         )
         return stream_decryptor.decrypt_stream(chunk_length=chunk_length)
 
+    def __eq__(self, obj: object) -> bool:
+        if not isinstance(obj, KeyPair):
+            raise TypeError(f"Unsupported type: {type(obj)}")
+        return obj.key_id == self.key_id
+
     def __contains__(self, obj: object) -> bool:
         if isinstance(obj, PublicKey):
             return obj.key_id == self.key_id
         elif isinstance(obj, bytes):
             return obj == self.key_id
-        return False
+        raise TypeError(f"Unsupported type: {type(obj)}")
 
     def _create_signature(
         self,
