@@ -13,6 +13,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 cryptography = ">=40,<43"
+cffi = "^1.17"
 
 
 [tool.poetry.group.dev.dependencies]
