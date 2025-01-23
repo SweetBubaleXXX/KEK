@@ -1,8 +1,8 @@
 import pytest
 
-from kek import exceptions
-from kek.constants import SerializedKeyType
-from kek.utils import (
+from gnukek import exceptions
+from gnukek.constants import SerializedKeyType
+from gnukek.utils import (
     PreprocessedEncryptedStream,
     extract_key_id,
     get_key_type,

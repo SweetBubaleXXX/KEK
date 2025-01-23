@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kek import constants, exceptions
-from kek.backends import v1
+from gnukek import constants, exceptions
+from gnukek.backends import v1
 from tests.constants import SAMPLE_MESSAGE
 
 

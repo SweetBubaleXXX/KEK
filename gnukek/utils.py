@@ -1,8 +1,8 @@
 from io import BufferedReader, RawIOBase
 
-from kek import constants, exceptions
-from kek.constants import KEY_ID_LENGTH
-from kek.exceptions import raises
+from gnukek import constants, exceptions
+from gnukek.constants import KEY_ID_LENGTH
+from gnukek.exceptions import raises
 
 
 class PreprocessedEncryptedStream(BufferedReader):

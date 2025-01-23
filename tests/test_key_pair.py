@@ -2,9 +2,9 @@ import io
 
 import pytest
 
-from kek import KeyPair, exceptions
-from kek.constants import KEY_ID_SLICE, LATEST_KEK_VERSION, SUPPORTED_KEY_SIZES
-from kek.utils import preprocess_encrypted_stream
+from gnukek import KeyPair, exceptions
+from gnukek.constants import KEY_ID_SLICE, LATEST_KEK_VERSION, SUPPORTED_KEY_SIZES
+from gnukek.utils import preprocess_encrypted_stream
 
 from .helpers import async_iterator
 

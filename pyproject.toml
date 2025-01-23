@@ -3,7 +3,7 @@ profile = "black"
 
 
 [tool.poetry]
-name = "kek"
+name = "gnukek"
 version = "2.0.0a0"
 description = "Key Encryption Key"
 authors = ["SweetBubaleXXX <70811772+SweetBubaleXXX@users.noreply.github.com>"]

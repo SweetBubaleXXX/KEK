@@ -1,7 +1,7 @@
 import pytest
 
-from kek import PublicKey
-from kek.constants import LATEST_KEK_VERSION
+from gnukek import PublicKey
+from gnukek.constants import LATEST_KEK_VERSION
 
 from .helpers import async_iterator
 

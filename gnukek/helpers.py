@@ -1,4 +1,4 @@
-from kek import constants, exceptions
+from gnukek import constants, exceptions
 
 
 def validate_supported_algorithm_version(algorithm_version: int) -> None:

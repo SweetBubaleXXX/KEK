@@ -3,7 +3,7 @@ from base64 import b64decode
 
 import pytest
 
-from kek import KeyPair, PublicKey
+from gnukek import KeyPair, PublicKey
 
 from . import constants
 

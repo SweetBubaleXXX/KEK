@@ -6,7 +6,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from kek.backends.v1 import Decryptor, Encryptor, StreamDecryptor
+from gnukek.backends.v1 import Decryptor, Encryptor, StreamDecryptor
 from tests import constants
 
 

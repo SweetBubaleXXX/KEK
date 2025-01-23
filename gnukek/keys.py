@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
 
-from kek import helpers, utils
-from kek.utils import PreprocessedEncryptedStream
+from gnukek import helpers, utils
+from gnukek.utils import PreprocessedEncryptedStream
 
 from . import constants, exceptions
 from .backends import v1

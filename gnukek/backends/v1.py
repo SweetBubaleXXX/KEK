@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, CipherContext, modes
 from cryptography.hazmat.primitives.ciphers.algorithms import AES256
 from cryptography.hazmat.primitives.padding import PKCS7
 
-from kek.backends.decryption import (
+from gnukek.backends.decryption import (
     DecryptionBackend,
     DecryptionBackendFactory,
     StreamDecryptionBackend,
