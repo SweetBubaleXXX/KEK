@@ -1,6 +1,5 @@
-import io
 import os
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.ciphers import Cipher, CipherContext, modes
@@ -54,7 +53,7 @@ class Encryptor(EncryptionBackend):
     @raises(exceptions.EncryptionError)
     def encrypt_stream(
         self,
-        buffer: io.BufferedIOBase,
+        buffer: BinaryIO,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:
@@ -67,7 +66,7 @@ class _StreamEncryptionIterator:
     def __init__(
         self,
         encryptor: CipherContext,
-        buffer: io.BufferedIOBase,
+        buffer: BinaryIO,
         chunk_length: int,
     ) -> None:
         self._encryptor = encryptor
@@ -152,7 +151,7 @@ class _StreamDecryptionIterator:
     def __init__(
         self,
         decryptor: CipherContext,
-        buffer: io.BufferedIOBase,
+        buffer: BinaryIO,
         chunk_length: int,
     ) -> None:
         self._decryptor = decryptor
@@ -189,7 +188,7 @@ class DecryptorFactory(DecryptionBackendFactory):
 
     @staticmethod
     def get_stream_decryptor(
-        buffer: io.BufferedIOBase, *, private_key: RSAPrivateKey
+        buffer: BinaryIO, *, private_key: RSAPrivateKey
     ) -> StreamDecryptor:
         return StreamDecryptor(buffer, private_key)
 

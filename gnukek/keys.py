@@ -1,6 +1,5 @@
-from io import BufferedIOBase
 from types import MappingProxyType
-from typing import AsyncIterable, Callable, Iterable, Iterator, Mapping
+from typing import AsyncIterable, BinaryIO, Callable, Iterable, Iterator, Mapping
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -94,7 +93,7 @@ class PublicKey:
         self,
         signature: bytes,
         *,
-        buffer: BufferedIOBase,
+        buffer: BinaryIO,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> bool:
         hasher = hashes.Hash(constants.SIGNATURE_HASH_ALGORITHM)
@@ -229,7 +228,7 @@ class KeyPair:
     @raises(exceptions.SigningError)
     def sign_stream(
         self,
-        message: BufferedIOBase,
+        message: BinaryIO,
         *,
         chunk_size: int = constants.CHUNK_LENGTH,
     ) -> bytes:
@@ -280,7 +279,7 @@ class KeyPair:
     @raises(exceptions.DecryptionError)
     def decrypt_stream(
         self,
-        message: BufferedIOBase | PreprocessedEncryptedStream,
+        message: BinaryIO,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:

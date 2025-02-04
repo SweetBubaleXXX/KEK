@@ -1,6 +1,5 @@
 import functools
-import io
-from typing import Callable
+from typing import BinaryIO, Callable
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -29,7 +28,7 @@ def v1_decryptor_factory(serialized_private_key) -> Callable[[bytes], Decryptor]
 @pytest.fixture
 def v1_stream_decryptor_factory(
     serialized_private_key,
-) -> Callable[[io.BufferedIOBase], StreamDecryptor]:
+) -> Callable[[BinaryIO], StreamDecryptor]:
     private_key = serialization.load_pem_private_key(
         serialized_private_key, password=None
     )
