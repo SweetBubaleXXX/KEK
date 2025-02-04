@@ -1,6 +1,5 @@
-import io
 from abc import ABCMeta, abstractmethod
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -27,7 +26,7 @@ class EncryptionBackend(metaclass=ABCMeta):
     @abstractmethod
     def encrypt_stream(
         self,
-        buffer: io.BufferedIOBase,
+        buffer: BinaryIO,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]: ...

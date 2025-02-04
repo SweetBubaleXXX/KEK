@@ -1,6 +1,5 @@
-import io
 from abc import ABCMeta, abstractmethod
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -24,7 +23,7 @@ class StreamDecryptionBackend(metaclass=ABCMeta):
 
     def __init__(
         self,
-        buffer: io.BufferedIOBase,
+        buffer: BinaryIO,
         private_key: rsa.RSAPrivateKey,
     ) -> None:
         self._buffer = buffer
@@ -50,5 +49,5 @@ class DecryptionBackendFactory(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def get_stream_decryptor(
-        buffer: io.BufferedIOBase, *, private_key: rsa.RSAPrivateKey
+        buffer: BinaryIO, *, private_key: rsa.RSAPrivateKey
     ) -> StreamDecryptionBackend: ...
