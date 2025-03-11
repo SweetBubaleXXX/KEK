@@ -1,22 +1,25 @@
-from io import BufferedReader, RawIOBase
+from typing import BinaryIO
 
 from gnukek import constants, exceptions
 from gnukek.constants import KEY_ID_LENGTH
 from gnukek.exceptions import raises
 
 
-class PreprocessedEncryptedStream(BufferedReader):
+class PreprocessedEncryptedStream:
     def __init__(
         self,
-        original_stream: RawIOBase,
+        original_stream: BinaryIO,
         *,
         algorithm_version: int,
         key_id: bytes,
     ) -> None:
-        super().__init__(original_stream)
         self._original_stream = original_stream
         self._algorithm_version = algorithm_version
         self._key_id = key_id
+
+    @property
+    def original_stream(self) -> BinaryIO:
+        return self._original_stream
 
     @property
     def algorithm_version(self) -> int:
@@ -28,15 +31,17 @@ class PreprocessedEncryptedStream(BufferedReader):
 
 
 @raises(exceptions.DecryptionError)
-def preprocess_encrypted_stream(raw_stream: RawIOBase) -> PreprocessedEncryptedStream:
-    algorithm_version = raw_stream.read(1)[0]
-    key_id = raw_stream.read(KEY_ID_LENGTH)
+def preprocess_encrypted_stream(
+    original_stream: BinaryIO,
+) -> PreprocessedEncryptedStream:
+    algorithm_version = original_stream.read(1)[0]
+    key_id = original_stream.read(KEY_ID_LENGTH)
 
     if len(key_id) < KEY_ID_LENGTH:
         raise exceptions.DecryptionError("Failed to extract key id")
 
     return PreprocessedEncryptedStream(
-        raw_stream,
+        original_stream,
         algorithm_version=algorithm_version,
         key_id=key_id,
     )

@@ -122,11 +122,10 @@ def test_decrypt_stream(key_pair, encrypted_stream, sample_message):
     assert decrypted_message == sample_message
 
 
-def test_decrypt_preprocessed_stream(key_pair, encrypted_file_path, sample_message):
-    with open(encrypted_file_path, "rb", buffering=0) as f:
-        preprocessed_stream = preprocess_encrypted_stream(f)
-        decryption_iterator = key_pair.decrypt_stream(preprocessed_stream)
-        decrypted_message = b"".join(decryption_iterator)
+def test_decrypt_preprocessed_stream(key_pair, encrypted_stream, sample_message):
+    preprocessed_stream = preprocess_encrypted_stream(encrypted_stream)
+    decryption_iterator = key_pair.decrypt_stream(preprocessed_stream)
+    decrypted_message = b"".join(decryption_iterator)
     assert decrypted_message == sample_message
 
 
