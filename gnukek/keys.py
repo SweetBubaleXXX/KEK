@@ -279,24 +279,26 @@ class KeyPair:
     @raises(exceptions.DecryptionError)
     def decrypt_stream(
         self,
-        message: BinaryIO,
+        message: BinaryIO | PreprocessedEncryptedStream,
         *,
         chunk_length: int = constants.CHUNK_LENGTH,
     ) -> Iterator[bytes]:
         if isinstance(message, PreprocessedEncryptedStream):
             algorithm_version = message.algorithm_version
             key_id = message.key_id
+            stream = message.original_stream
         else:
             header = message.read(constants.KEY_ID_SLICE.stop)
             algorithm_version = header[0]
             key_id = utils.extract_key_id(header)
+            stream = message
 
         helpers.validate_supported_algorithm_version(algorithm_version)
         self._validate_key_id(key_id)
 
         decryptor_factory = _DECRYPTION_BACKEND_FACTORIES[algorithm_version]
         stream_decryptor = decryptor_factory.get_stream_decryptor(
-            message, private_key=self._rsa_private_key
+            stream, private_key=self._rsa_private_key
         )
         return stream_decryptor.decrypt_stream(chunk_length=chunk_length)
 

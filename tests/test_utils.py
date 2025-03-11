@@ -22,9 +22,8 @@ def empty_file_path(tmp_path):
     return tmp_file_path
 
 
-def test_preprocess_encrypted_stream(encrypted_file_path, key_id):
-    with open(encrypted_file_path, "rb", buffering=0) as f:
-        preprocessed_stream = preprocess_encrypted_stream(f)
+def test_preprocess_encrypted_stream(encrypted_stream, key_id):
+    preprocessed_stream = preprocess_encrypted_stream(encrypted_stream)
 
     assert isinstance(preprocessed_stream, PreprocessedEncryptedStream)
     assert preprocessed_stream.algorithm_version == 1
